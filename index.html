@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vardiya Planlayıcı</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#151b26;--ink2:#4a5568;--line:#e4e8ee;--line2:#eef1f5;--bg:#f6f7f9;--panel:#fff;
+  --accent:#4338ca;--accent-soft:#eef0fd;--warn:#c0392b;--wknd:#faf6ef;--ok:#1f7a45;
+  --sab-bg:#d6f0dd;--sab-tx:#1f7a45;--ogl-bg:#fce3c8;--ogl-tx:#a2621b;
+  --gec-bg:#d3e2fb;--gec-tx:#1b4f8a;--off-bg:#e9ebef;--off-tx:#6b7280;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:13px;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 18px;position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand b{font-size:15px;letter-spacing:-.01em}
+.brand span{font-size:11px;color:var(--ink2)}
+.month-nav{display:flex;align-items:center;gap:6px}
+.month-nav .m{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:14px;min-width:140px;text-align:center}
+button{font-family:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:500;transition:.12s}
+button:hover{border-color:#cfd6e0;background:#fbfcfd}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#3730a3}
+button.icon{padding:7px 10px}
+.spacer{flex:1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.saved{font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+.wrap{padding:14px 18px 40px}
+.bar{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 14px;display:flex;flex-direction:column;gap:1px}
+.stat b{font-family:"JetBrains Mono",monospace;font-size:17px;font-weight:600}
+.stat span{font-size:10.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em}
+.gridbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:calc(100vh - 300px);position:relative}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0;text-align:center;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--panel);z-index:20;font-weight:600;color:var(--ink2)}
+thead .dnum{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink);padding:6px 0 1px}
+thead .dname{font-size:9.5px;color:var(--ink2);padding:0 0 6px;font-weight:500}
+th.day,td.day{width:74px;min-width:74px}
+.wkndcol{background:var(--wknd)}
+.namecol{position:sticky;left:0;z-index:30;background:var(--panel);text-align:left;padding:0 10px;font-weight:600;min-width:120px;box-shadow:1px 0 0 var(--line)}
+thead .namecol{z-index:35}
+tbody tr{height:32px}
+tbody .namecol{font-size:12px}
+.nn{font-size:9px;color:var(--gec-tx);font-weight:700;margin-left:4px;border:1px solid var(--gec-bg);border-radius:3px;padding:0 3px}
+.cell{cursor:pointer;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;height:32px;user-select:none;transition:.1s;position:relative}
+.cell:hover{outline:2px solid var(--accent);outline-offset:-2px;z-index:5}
+.c-S{background:var(--sab-bg);color:var(--sab-tx)}
+.c-O{background:var(--ogl-bg);color:var(--ogl-tx)}
+.c-G{background:var(--gec-bg);color:var(--gec-tx)}
+.c-off{background:var(--off-bg);color:var(--off-tx);font-weight:600}
+.cell.warn::after{content:"";position:absolute;top:2px;right:2px;width:0;height:0;border-top:7px solid var(--warn);border-left:7px solid transparent}
+.sumcol{position:sticky;background:var(--panel);z-index:22;min-width:56px;font-family:"JetBrains Mono",monospace;font-weight:600;font-size:12px}
+.sumcol small{font-weight:400;color:var(--ink2)}
+.sumhead{font-size:9px;color:var(--ink2);font-weight:600;padding:5px 3px}
+tfoot td{background:#fbfcfd;height:26px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600}
+tfoot .namecol{background:#fbfcfd;font-family:Inter;font-weight:600;font-size:10.5px;color:var(--ink2)}
+.cov-ok{color:var(--ok)}.cov-bad{color:var(--warn)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:14px;padding:14px 16px}
+.panel h3{margin:0 0 10px;font-size:13px;display:flex;align-items:center;gap:8px}
+.badge{background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:1px 9px;font-size:11px;font-weight:600}
+.badge.zero{background:#e7f8ee;color:var(--ok)}
+.warnlist{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow:auto}
+.warnrow{display:flex;gap:10px;align-items:baseline;font-size:12px;padding:6px 8px;border-radius:7px;background:#fdf3f2}
+.warnrow b{color:var(--warn);font-weight:600;min-width:130px}
+.warnrow.ok{background:#f2faf5;color:var(--ok)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+.cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.cfg label{font-size:10.5px;color:var(--ink2);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.cfg input{font-family:"JetBrains Mono",monospace;width:100%;padding:7px;border:1px solid var(--line);border-radius:7px;font-size:12.5px}
+.stafftbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.stafftbl th{text-align:left;color:var(--ink2);font-size:10.5px;text-transform:uppercase;padding:4px 8px;border-bottom:1px solid var(--line)}
+.stafftbl td{padding:3px 8px;border-bottom:1px solid var(--line2)}
+.stafftbl input[type=number]{width:70px;font-family:"JetBrains Mono",monospace;padding:4px 6px;border:1px solid var(--line);border-radius:6px}
+.stafftbl input[type=text]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-weight:600}
+.details{margin-top:14px}
+summary{cursor:pointer;font-weight:600;font-size:13px;padding:6px 0;user-select:none}
+.overlay{position:fixed;inset:0;background:rgba(20,27,38,.28);z-index:100;display:none;align-items:center;justify-content:center}
+.overlay.on{display:flex}
+.editor{background:var(--panel);border-radius:14px;box-shadow:0 20px 60px rgba(20,27,38,.25);width:330px;max-width:92vw;padding:18px}
+.editor h4{margin:0 0 2px;font-size:14px}
+.editor .who{color:var(--ink2);font-size:12px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:"JetBrains Mono",monospace;font-size:11.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;flex:1;text-align:center;min-width:120px}
+.chip.S{background:var(--sab-bg);color:var(--sab-tx);border-color:transparent}
+.chip.O{background:var(--ogl-bg);color:var(--ogl-tx);border-color:transparent}
+.chip.G{background:var(--gec-bg);color:var(--gec-tx);border-color:transparent}
+.chip.off{background:var(--off-bg);color:var(--off-tx);border-color:transparent}
+.ed-actions{display:flex;gap:8px;margin-top:14px}
+.ed-actions button{flex:1}
+@media(max-width:640px){header{padding:9px 11px;gap:9px}.wrap{padding:9px 11px 30px}.actions button span{display:none}.brand span{display:none}}
+@media print{header .actions,.panel,.overlay,.bar{display:none!important}.gridbox{max-height:none;border:none;overflow:visible}body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Vardiya Planlayıcı</b><span>3 vardiya · otomatik plan · kural denetimi</span></div>
+  <div class="month-nav">
+    <button class="icon" onclick="shiftMonth(-1)">&#8249;</button>
+    <div class="m mono" id="monthLabel">—</div>
+    <button class="icon" onclick="shiftMonth(1)">&#8250;</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="actions">
+    <button class="primary" onclick="doGenerate()">&#9889; <span>Otomatik Üret</span></button>
+    <button onclick="clearMonth()">Temizle</button>
+    <button onclick="exportXlsx()">&#8595; <span>Excel</span></button>
+    <button onclick="window.print()">&#128424; <span>Yazdır</span></button>
+    <div class="saved"><span class="dot"></span><span id="savedTxt">kayıtlı</span></div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="bar" id="statbar"></div>
+  <div class="gridbox"><table id="grid"></table></div>
+
+  <div class="panel">
+    <h3>Kural Uyarıları <span class="badge" id="warnBadge">0</span></h3>
+    <div class="warnlist" id="warnList"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--sab-bg)"></i>Sabah</span>
+      <span><i class="sw" style="background:var(--ogl-bg)"></i>Öğlen</span>
+      <span><i class="sw" style="background:var(--gec-bg)"></i>Gece</span>
+      <span><i class="sw" style="background:var(--off-bg)"></i>İzin</span>
+      <span>&#9650; Kural ihlali olan hücre</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <details class="details" open>
+      <summary>⚙️ Ayarlar & Personel</summary>
+      <div class="cfg" style="margin-top:12px">
+        <div><label>Sabah kişi</label><input type="number" id="cfgNS" min="0"></div>
+        <div><label>Öğlen kişi</label><input type="number" id="cfgNO" min="0"></div>
+        <div><label>Gece kişi</label><input type="number" id="cfgNG" min="0"></div>
+        <div><label>Mola (dk)</label><input type="number" id="cfgBreak" min="0"></div>
+        <div><label>Min. dinlenme (saat)</label><input type="number" id="cfgRest" min="0"></div>
+        <div><label>Max ardışık gün</label><input type="number" id="cfgStreak" min="1"></div>
+        <div><label>Haftalık max (saat)</label><input type="number" id="cfgWeekly" min="0"></div>
+        <div><label>Saat ücreti € (genel)</label><input type="number" id="cfgRate" min="0" step="0.5"></div>
+      </div>
+      <div style="margin-top:8px"><button onclick="saveCfg()">Ayarları Kaydet</button> <button onclick="addStaff()">+ Personel</button></div>
+      <table class="stafftbl" id="staffTbl"></table>
+      <div style="font-size:11px;color:var(--ink2);margin-top:6px">Gece ✓ kapalı = o personel gece vardiyasına atanmaz. Ücret boşsa genel ücret kullanılır.</div>
+    </details>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeEd()">
+  <div class="editor" id="editor"></div>
+</div>
+
+<script>
+const TRDAY=["PAZAR","PZT","SALI","ÇAR","PERŞ","CUMA","CMTS"];
+const MONTHS=["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
+const SEED_NAMES=["ESENGÜL","ALİ","HÜSEYİN","SEVHAN","OĞUZHAN","TESLİME","MERVE","ŞERİFE","DİLEK","ALİ KEMAL","MEHMET","MUSTAFA","TUĞBA","ÖZGE","NİSA","ESMA","ESRA","HATİCE","GÜLSÜM","RECEP AVCI"];
+const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
+  shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
+
+let store, key, year, month, staff, cfg;
+
+// ---- storage (güvenli, düşerse bellekte) ----
+let mem={};
+function sGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
+function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
+let savedT;
+function flashSaved(){const t=document.getElementById("savedTxt");if(!t)return;t.textContent="kaydedildi";clearTimeout(savedT);savedT=setTimeout(()=>t.textContent="kayıtlı",1200)}
+
+function load(){
+  try{store=JSON.parse(sGet("vardiya_adv"))||{}}catch(e){store={}}
+  cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):JSON.parse(JSON.stringify(DEFAULT_CFG));
+  if(!store.staff) store.staff=SEED_NAMES.map(n=>({name:n,noNight:false,rate:null}));
+  const now=new Date(); year=2026; month=7;   // başlangıç: Temmuz 2026
+  setMonth(year,month,true);
+}
+function persist(){store.cfg=cfg;store.staff=staff;store.months=store.months||{};store.months[key]=plan();sSet("vardiya_adv",JSON.stringify(store));flashSaved()}
+function plan(){const o={};staff.forEach(s=>o[s.name]=s._days);return o}
+function daysInMonth(y,m){return new Date(y,m,0).getDate()}
+
+function setMonth(y,m,autogen){
+  year=y;month=m;key=y+"-"+m;const dim=daysInMonth(y,m);
+  staff=(store.staff||[]).map(s=>Object.assign({},s));
+  const saved=(store.months||{})[key]||{};
+  let empty=true;
+  staff.forEach(s=>{let d=saved[s.name];if(!d){d=Array(dim).fill("")}else{d=d.slice();while(d.length<dim)d.push("");d.length=dim;if(d.some(x=>x))empty=false}s._days=d});
+  document.getElementById("monthLabel").textContent=MONTHS[m-1]+" "+y;
+  if(empty&&autogen){generate()}
+  render();syncCfgInputs();
+}
+function shiftMonth(d){let m=month+d,y=year;if(m<1){m=12;y--}if(m>12){m=1;y++}
+  // önce mevcut ayı kaydet
+  store.months=store.months||{};store.months[key]=plan();sSet("vardiya_adv",JSON.stringify(store));
+  setMonth(y,m,true)}
+
+// ---- zaman / parse ----
+function pmin(hhmm){const[h,m]=hhmm.split(":").map(Number);return h*60+(m||0)}
+function shiftByVal(v){for(const sh of cfg.shifts){if(v===sh.start+"-"+sh.end)return sh}return null}
+function grossHours(v){const sh=shiftByVal(v);if(!sh)return 0;let s=pmin(sh.start),e=pmin(sh.end);if(e<=s)e+=1440;return (e-s)/60}
+function netHours(v){const g=grossHours(v);if(!g)return 0;return g-(g>6?cfg.breakMin/60:0)}
+function restBetween(prevSh,nextSh){let pe=pmin(prevSh.end);if(pe<=pmin(prevSh.start))pe+=1440;const ns=1440+pmin(nextSh.start);return (ns-pe)/60}
+
+// ---- otomatik üretim ----
+function generate(){
+  const dim=daysInMonth(year,month);
+  const S=cfg.shifts.map(sh=>Object.assign({need: sh.key==="S"?cfg.ns: sh.key==="O"?cfg.no: sh.key==="G"?cfg.ng:0},sh));
+  staff.forEach(s=>s._days=Array(dim).fill(""));
+  const st={};staff.forEach(s=>st[s.name]={last:null,streak:0,tot:0,g:0});
+  const elig=(s,sh)=>{
+    const t=st[s.name];
+    if(t.streak>=cfg.streak)return false;
+    if(sh.key==="G"&&s.noNight)return false;
+    if(t.last===null)return true;
+    const prev=S.find(x=>x.key===t.last);
+    return restBetween(prev,sh)>=cfg.rest;
+  };
+  const score=(s,sh)=>{const t=st[s.name];let v=t.tot+t.streak*2.2;if(sh.key==="G")v+=t.g*3;return v+Math.random()*0.05};
+  for(let di=0;di<dim;di++){
+    const assigned={};
+    for(const sh of S){
+      let pool=staff.filter(s=>!(s.name in assigned)&&elig(s,sh));
+      pool.sort((a,b)=>score(a,sh)-score(b,sh));
+      const take=pool.slice(0,sh.need);
+      if(take.length<sh.need)return {ok:false,day:di+1,shift:sh.label,got:take.length};
+      take.forEach(s=>assigned[s.name]=sh.key);
+    }
+    staff.forEach(s=>{
+      if(s.name in assigned){const k=assigned[s.name];const sh=S.find(x=>x.key===k);s._days[di]=sh.start+"-"+sh.end;const t=st[s.name];t.last=k;t.streak++;t.tot++;if(k==="G")t.g++}
+      else{s._days[di]="İZİN";st[s.name].last=null;st[s.name].streak=0}
+    });
+  }
+  return {ok:true};
+}
+function doGenerate(){
+  const r=generate();
+  if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+" vardiyası dolmadı ("+r.got+" kişi). Kadro sayısını veya 'gece yapamaz' kısıtlarını gözden geçir.");render();return}
+  persist();render();
+}
+function clearMonth(){if(!confirm("Bu ayın planı silinsin mi?"))return;const dim=daysInMonth(year,month);staff.forEach(s=>s._days=Array(dim).fill(""));persist();render()}
+
+// ---- uyarılar ----
+function warnings(){
+  const W=[],cw={};const dim=daysInMonth(year,month);
+  staff.forEach((s,si)=>{
+    let streak=0;
+    for(let i=0;i<dim;i++){
+      const v=s._days[i],sh=shiftByVal(v);
+      if(sh){streak++;if(streak>cfg.streak){W.push({who:s.name,day:i+1,msg:streak+" gün arka arkaya izinsiz"});cw[si+"_"+i]=1}}
+      else if(v==="İZİN"||v===""){streak=0}
+    }
+    for(let i=0;i<dim-1;i++){
+      const a=shiftByVal(s._days[i]),b=shiftByVal(s._days[i+1]);
+      if(a&&b){const r=restBetween(a,b);if(r<cfg.rest){W.push({who:s.name,day:i+2,msg:"dinlenme "+r.toFixed(1)+"s (<"+cfg.rest+"s)"});cw[si+"_"+(i+1)]=1}}
+    }
+    let wk=0;
+    for(let i=0;i<dim;i++){const dow=new Date(year,month-1,i+1).getDay();if(dow===1)wk=0;wk+=netHours(s._days[i]);
+      const nd=i+1<dim?new Date(year,month-1,i+2).getDay():-1;
+      if((nd===1||i===dim-1)&&wk>cfg.weekly)W.push({who:s.name,day:i+1,msg:"haftalık "+wk.toFixed(1)+"s net (>"+cfg.weekly+"s)"})}
+  });
+  // günlük kadro kontrolü
+  for(let i=0;i<dim;i++){
+    const c={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[i]);if(sh&&c[sh.key]!=null)c[sh.key]++});
+    if(c.S!==cfg.ns)W.push({who:"KADRO",day:i+1,msg:"Sabah "+c.S+"/"+cfg.ns});
+    if(c.O!==cfg.no)W.push({who:"KADRO",day:i+1,msg:"Öğlen "+c.O+"/"+cfg.no});
+    if(c.G!==cfg.ng)W.push({who:"KADRO",day:i+1,msg:"Gece "+c.G+"/"+cfg.ng});
+  }
+  return {W,cw};
+}
+
+// ---- hesaplar ----
+function personStats(s){let sh={S:0,O:0,G:0},tot=0,net=0;const dim=daysInMonth(year,month);
+  for(let i=0;i<dim;i++){const x=shiftByVal(s._days[i]);if(x){sh[x.key]++;tot++;net+=netHours(s._days[i])}}
+  const rate=(s.rate!=null&&s.rate!=="")?+s.rate:+cfg.rate;
+  return {sh,tot,net:Math.round(net*10)/10,cost:Math.round(net*rate)}}
+
+// ---- render ----
+function render(){
+  const dim=daysInMonth(year,month);const {W,cw}=warnings();
+  // stat bar
+  let totNet=0,totCost=0,totShift=0;staff.forEach(s=>{const p=personStats(s);totNet+=p.net;totCost+=p.cost;totShift+=p.tot});
+  const rate=+cfg.rate;
+  document.getElementById("statbar").innerHTML=
+    stat(staff.length,"personel")+stat(totShift,"vardiya/ay")+stat(totNet.toFixed(0)+"s","net işgücü")+
+    (rate>0?stat(totCost.toLocaleString("tr")+" €","aylık işçilik"):"")+
+    stat(W.length,"kural uyarısı",W.length?"var(--warn)":"var(--ok)");
+  // grid
+  let h="<thead><tr><th class='namecol'>Personel</th>";
+  for(let d=1;d<=dim;d++){const dow=new Date(year,month-1,d).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";
+    h+="<th class='day"+wk+"'><div class='dnum'>"+d+"</div><div class='dname'>"+TRDAY[dow]+"</div></th>"}
+  h+="<th class='sumcol sumhead' style='right:112px'>NET s</th><th class='sumcol sumhead' style='right:56px'>Vard.</th><th class='sumcol sumhead' style='right:0'>€</th></tr></thead><tbody>";
+  staff.forEach((s,si)=>{
+    h+="<tr><td class='namecol'>"+esc(s.name)+(s.noNight?"<span class='nn'>G✕</span>":"")+"</td>";
+    for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();
+      const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("c-"+sh.key):(v==="İZİN"?"c-off":"");const wn=cw[si+"_"+d]?" warn":"";
+      const disp=sh?(sh.start.slice(0,5)+"-"+sh.end.slice(0,5)):(v==="İZİN"?"İZİN":"");
+      h+="<td class='cell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
+    const p=personStats(s);
+    h+="<td class='sumcol' style='right:112px'>"+p.net+"</td><td class='sumcol' style='right:56px'>"+p.tot+"</td><td class='sumcol' style='right:0'>"+(rate>0||s.rate?p.cost:"–")+"</td></tr>"});
+  h+="</tbody><tfoot>";
+  const rows=[["Sabah",cfg.ns,"S"],["Öğlen",cfg.no,"O"],["Gece",cfg.ng,"G"]];
+  rows.forEach(([lbl,target,k])=>{
+    h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
+    for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});
+      h+="<td class='"+(c===target?"cov-ok":"cov-bad")+"'>"+c+"</td>"}
+    h+="<td class='sumcol' style='right:112px'></td><td class='sumcol' style='right:56px'></td><td class='sumcol' style='right:0'></td></tr>"});
+  h+="</tfoot>";
+  document.getElementById("grid").innerHTML=h;
+  // uyarılar
+  const wl=document.getElementById("warnList"),wb=document.getElementById("warnBadge");
+  wb.textContent=W.length;wb.className="badge"+(W.length?"":" zero");
+  wl.innerHTML=W.length?W.slice(0,60).map(x=>"<div class='warnrow'><b>"+esc(x.who)+" · "+x.day+"</b><span>"+esc(x.msg)+"</span></div>").join(""):"<div class='warnrow ok'>Tüm kurallar sağlanıyor. Plan temiz.</div>";
+  renderStaffTbl();
+}
+function stat(v,l,color){return "<div class='stat'><b"+(color?" style='color:"+color+"'":"")+">"+v+"</b><span>"+l+"</span></div>"}
+function esc(s){return(s+"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}
+
+// ---- ayarlar & personel ----
+function syncCfgInputs(){const g=id=>document.getElementById(id);
+  g("cfgNS").value=cfg.ns;g("cfgNO").value=cfg.no;g("cfgNG").value=cfg.ng;g("cfgBreak").value=cfg.breakMin;
+  g("cfgRest").value=cfg.rest;g("cfgStreak").value=cfg.streak;g("cfgWeekly").value=cfg.weekly;g("cfgRate").value=cfg.rate}
+function saveCfg(){const g=id=>+document.getElementById(id).value;
+  cfg.ns=g("cfgNS");cfg.no=g("cfgNO");cfg.ng=g("cfgNG");cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");
+  persist();render()}
+function renderStaffTbl(){
+  let h="<tr><th>Personel</th><th>Gece?</th><th>Saat ücreti €</th><th></th></tr>";
+  staff.forEach((s,i)=>{h+="<tr><td><input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></td>"+
+    "<td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td>"+
+    "<td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td>"+
+    "<td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});
+  document.getElementById("staffTbl").innerHTML=h;
+}
+function setName(i,v){staff[i].name=v.trim().toUpperCase();store.staff=staff.map(({_days,...r})=>r);persist();render()}
+function setNight(i,ch){staff[i].noNight=!ch;store.staff=staff.map(({_days,...r})=>r);persist()}
+function setRate(i,v){staff[i].rate=v===""?null:+v;store.staff=staff.map(({_days,...r})=>r);persist();render()}
+function addStaff(){const n=prompt("Personel adı:");if(!n)return;const dim=daysInMonth(year,month);staff.push({name:n.trim().toUpperCase(),noNight:false,rate:null,_days:Array(dim).fill("")});store.staff=staff.map(({_days,...r})=>r);persist();render()}
+function delStaff(i){if(!confirm(staff[i].name+" silinsin mi?"))return;staff.splice(i,1);store.staff=staff.map(({_days,...r})=>r);persist();render()}
+
+// ---- hücre editörü ----
+let curSi,curDi;
+function openEd(si,di){curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();
+  let h="<h4>"+esc(s.name)+"</h4><div class='who'>"+(di+1)+" "+MONTHS[month-1]+" · "+TRDAY[dow]+" · şu an: <b>"+(s._days[di]||"boş")+"</b></div><div class='chips'>";
+  cfg.shifts.forEach(sh=>{h+="<div class='chip "+sh.key+"' onclick='setVal(\""+sh.start+"-"+sh.end+"\")'>"+sh.label+"<br>"+sh.start+"-"+sh.end+"</div>"});
+  h+="</div><div class='chips' style='margin-top:8px'><div class='chip off' onclick='setVal(\"İZİN\")'>İZİN</div><div class='chip' onclick='setVal(\"\")'>Temizle</div></div>";
+  h+="<div class='ed-actions'><button onclick='closeEd()'>Kapat</button></div>";
+  document.getElementById("editor").innerHTML=h;document.getElementById("overlay").classList.add("on")}
+function setVal(v){staff[curSi]._days[curDi]=v;persist();render();closeEd()}
+function closeEd(){document.getElementById("overlay").classList.remove("on")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeEd()});
+
+// ---- export ----
+function exportXlsx(){const dim=daysInMonth(year,month);
+  const head=["Personel"];for(let d=1;d<=dim;d++)head.push(d+" "+TRDAY[new Date(year,month-1,d).getDay()]);head.push("Vardiya","Net Saat","€");
+  const rows=[head];
+  staff.forEach(s=>{const p=personStats(s);const line=[s.name];for(let d=0;d<dim;d++){const sh=shiftByVal(s._days[d]);line.push(sh?sh.start+"-"+sh.end:(s._days[d]==="İZİN"?"İZİN":""))}line.push(p.tot,p.net,p.cost);rows.push(line)});
+  rows.push([]);
+  [["Sabah","S",cfg.ns],["Öğlen","O",cfg.no],["Gece","G",cfg.ng]].forEach(([lbl,k,t])=>{const line=[lbl+" ("+t+")"];for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});line.push(c)}line.push("","","");rows.push(line)});
+  const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MONTHS[month-1]+" "+year);
+  XLSX.writeFile(wb,"vardiya_"+year+"-"+String(month).padStart(2,"0")+".xlsx")}
+
+load();
+</script>
+</body>
+</html>
