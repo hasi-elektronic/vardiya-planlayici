@@ -265,6 +265,28 @@ table.mth{border-collapse:separate;border-spacing:0;width:max-content;min-width:
   .gridbox{max-height:calc(100vh - 240px)}
 }
 @media print{.sidebar,.bottomnav,.topbar .actions,.alertbar,.alertlist,.bar{display:none!important}.gridbox,.wkcard{max-height:none;overflow:visible;box-shadow:none}body{background:#fff}}
+td.wkcell{position:relative}
+.lockb{position:absolute;top:4px;right:7px;font-size:10px;opacity:.55;z-index:1;line-height:1}
+.yokblock{margin:6px 8px;border-radius:12px;padding:11px 8px;text-align:center;color:var(--off-tx);font-size:10px;font-weight:700;background:var(--off-bg);border:1.5px dashed var(--off-ac)}
+.roletag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:6px;color:#fff;vertical-align:middle;white-space:nowrap}
+.chip.yok{background:var(--off-bg);color:var(--off-tx);border-color:transparent}
+.m-yok{background:var(--off-bg);color:var(--off-tx);font-weight:700;font-size:11px}
+.sb.Y{background:var(--off-bg);color:var(--off-tx)}
+.menu-wrap{position:relative}
+.menu{position:absolute;top:calc(100% + 7px);right:0;background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-lg);padding:6px;min-width:230px;z-index:70}
+.menu button{width:100%;justify-content:flex-start;box-shadow:none;border:none;background:none;padding:9px 11px;border-radius:8px;font-size:12.5px}
+.menu button:hover{background:var(--panel2);transform:none}
+.menu .msec{font-size:9px;text-transform:uppercase;color:var(--ink3);font-weight:700;padding:9px 11px 4px;letter-spacing:.05em}
+.menu .tplrow{display:flex;gap:2px;align-items:center}
+.menu .tplrow button{flex:1}
+.menu .tplrow .del{flex:none;color:var(--warn);width:auto}
+.wabar{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 15px;margin-bottom:16px;box-shadow:var(--shadow)}
+.wabar .av{width:38px;height:38px;font-size:14px}.wabar b{font-size:14px;font-weight:800}
+.wa-btn{margin-left:auto;background:#1ea952;border-color:transparent;color:#fff;font-weight:700}
+.wa-btn:hover{filter:brightness(1.08)}
+.ed-lock{width:100%;justify-content:center;padding:11px;margin-top:9px;box-shadow:none}
+.ed-lock.on{background:var(--accent);color:#fff;border-color:transparent}
+@media(max-width:920px){.wabar{flex-wrap:wrap}.wa-btn{margin-left:0;width:100%;justify-content:center}}
 </style>
 </head>
 <body>
@@ -292,6 +314,7 @@ table.mth{border-collapse:separate;border-spacing:0;width:max-content;min-width:
         <button class="ghost" onclick="clearMonth()">Temizle</button>
         <button onclick="exportXlsx()">&#8595;<span>Excel</span></button>
         <button onclick="window.print()">&#128424;</button>
+        <div class="menu-wrap"><button class="ghost" onclick="toggleMenu(event)">Araçlar &#9662;</button><div class="menu" id="toolsMenu" style="display:none"></div></div>
         <div class="saved"><span class="dot"></span><span id="savedTxt">kayıtlı</span></div>
       </div>
     </div>
@@ -353,7 +376,8 @@ function load(){
   const sv=sGet("vardiya_view");view=(["week","day","person","month","settings"].includes(sv))?sv:(window.innerWidth<720?"day":"week");
   initTheme();setMonth(year,month,true);
 }
-function persist(){store.cfg=cfg;store.staff=staff;store.months=store.months||{};store.months[key]=plan();sSet("vardiya_adv",JSON.stringify(store));flashSaved()}
+function cleanStaff(){return staff.map(({_days,_lock,...r})=>r)}
+function persist(){store.cfg=cfg;store.staff=cleanStaff();store.months=store.months||{};store.months[key]=plan();store.locks=store.locks||{};const lk={};staff.forEach(s=>{if(s._lock&&s._lock.length)lk[s.name]=s._lock.slice()});store.locks[key]=lk;sSet("vardiya_adv",JSON.stringify(store));flashSaved()}
 function plan(){const o={};staff.forEach(s=>o[s.name]=s._days);return o}
 function daysInMonth(y,m){return new Date(y,m,0).getDate()}
 function monTitle(){return MONTHT[month-1]}
@@ -363,6 +387,7 @@ function setMonth(y,m,autogen){
   staff=(store.staff||[]).map(s=>Object.assign({},s));
   const saved=(store.months||{})[key]||{};let empty=true;
   staff.forEach(s=>{let d=saved[s.name];if(!d){d=Array(dim).fill("")}else{d=d.slice();while(d.length<dim)d.push("");d.length=dim;if(d.some(x=>x))empty=false}s._days=d});
+  const lockSaved=(store.locks||{})[key]||{};staff.forEach(s=>{s._lock=(lockSaved[s.name]||[]).slice()});
   document.getElementById("monthLabel").textContent=MONTHS[m-1]+" "+y;
   const today=new Date();if(today.getFullYear()===y&&today.getMonth()+1===m)selDay=today.getDate()-1;else selDay=Math.min(Math.max(selDay,0),dim-1);
   selWeek=Math.floor(selDay/7);if(selPerson>=staff.length)selPerson=0;
@@ -382,15 +407,17 @@ function restBetween(prevSh,nextSh){let pe=pmin(prevSh.end);if(pe<=pmin(prevSh.s
 function generate(){
   const dim=daysInMonth(year,month);
   const S=cfg.shifts.map(sh=>Object.assign({need: sh.key==="S"?cfg.ns: sh.key==="O"?cfg.no: sh.key==="G"?cfg.ng:0},sh));
-  staff.forEach(s=>s._days=Array(dim).fill(""));
+  staff.forEach(s=>{const lk=s._lock||[];s._days=s._days.map((v,i)=>((lk.indexOf(i)>=0||v==="YOK")?v:""))});
   const st={};staff.forEach(s=>st[s.name]={last:null,streak:0,tot:0,g:0});
   const elig=(s,sh)=>{const t=st[s.name];if(t.streak>=cfg.streak)return false;if(sh.key==="G"&&s.noNight)return false;if(t.last===null)return true;const prev=S.find(x=>x.key===t.last);return restBetween(prev,sh)>=cfg.rest};
   const score=(s,sh)=>{const t=st[s.name];let v=t.tot+t.streak*2.2;if(sh.key==="G")v+=t.g*3;return v+Math.random()*0.05};
   for(let di=0;di<dim;di++){
-    const assigned={};
-    for(const sh of S){let pool=staff.filter(s=>!(s.name in assigned)&&elig(s,sh));pool.sort((a,b)=>score(a,sh)-score(b,sh));const take=pool.slice(0,sh.need);if(take.length<sh.need)return {ok:false,day:di+1,shift:sh.label,got:take.length};take.forEach(s=>assigned[s.name]=sh.key)}
-    staff.forEach(s=>{if(s.name in assigned){const k=assigned[s.name];const sh=S.find(x=>x.key===k);s._days[di]=sh.start+"-"+sh.end;const t=st[s.name];t.last=k;t.streak++;t.tot++;if(k==="G")t.g++}else{s._days[di]="İZİN";st[s.name].last=null;st[s.name].streak=0}});
+    const cnt={S:0,O:0,G:0};const used=new Set();
+    staff.forEach(s=>{const sh=shiftByVal(s._days[di]);const isLk=(s._lock||[]).indexOf(di)>=0;if(sh){cnt[sh.key]=(cnt[sh.key]||0)+1;used.add(s.name)}else if(s._days[di]==="YOK"||s._days[di]==="İZİN"||isLk)used.add(s.name)});
+    for(const sh of S){let need=sh.need-(cnt[sh.key]||0);if(need<=0)continue;let pool=staff.filter(s=>!used.has(s.name)&&s._days[di]===""&&elig(s,sh));pool.sort((a,b)=>score(a,sh)-score(b,sh));const take=pool.slice(0,need);if(take.length<need)return {ok:false,day:di+1,shift:sh.label,got:(cnt[sh.key]||0)+take.length};take.forEach(s=>{s._days[di]=sh.start+"-"+sh.end;used.add(s.name)})}
+    staff.forEach(s=>{const sh=shiftByVal(s._days[di]);const t=st[s.name];if(sh){t.last=sh.key;t.streak++;t.tot++;if(sh.key==="G")t.g++}else{t.last=null;t.streak=0}});
   }
+  staff.forEach(s=>{for(let i=0;i<dim;i++)if(s._days[i]==="")s._days[i]="İZİN"});
   return {ok:true};
 }
 function doGenerate(){const r=generate();if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+" vardiyası dolmadı ("+r.got+" kişi). Kadro sayısını veya 'gece yapamaz' kısıtlarını gözden geçir.");render();return}persist();render()}
@@ -454,13 +481,14 @@ function renderWeek(cw){
   h+="</tr></thead><tbody>";
   staff.forEach((s,si)=>{
     let wknet=0;days.forEach(d=>wknet+=netHours(s._days[d]));
-    h+="<tr><td class='wkname'><div class='empcell'>"+avHtml(s.name)+"<div class='empmeta'><b>"+esc(s.name)+(s.noNight?" <span class='nn'>&#9790;✕</span>":"")+"</b><span>"+(Math.round(wknet*10)/10)+"s bu hafta</span></div></div></td>";
-    days.forEach(d=>{const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const wn=cw[si+"_"+d]?" warn":"";
+    h+="<tr><td class='wkname'><div class='empcell'>"+avHtml(s.name)+"<div class='empmeta'><b>"+esc(s.name)+(s.role?" <span class='roletag' style='background:"+roleColor(s.role)+"'>"+esc(s.role)+"</span>":"")+(s.noNight?" <span class='nn'>&#9790;✕</span>":"")+"</b><span>"+(Math.round(wknet*10)/10)+"s bu hafta</span></div></div></td>";
+    days.forEach(d=>{const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const wn=cw[si+"_"+d]?" warn":"";const lb=(s._lock||[]).indexOf(d)>=0?"<span class='lockb'>&#128274;</span>":"";
       let inner;
       if(sh)inner="<div class='shift "+sh.key+wn+"'><span class='t'>"+sh.start.slice(0,5)+"–"+sh.end.slice(0,5)+"</span><span class='l'>"+sh.label+"</span></div>";
+      else if(v==="YOK")inner="<div class='yokblock'>Müsait değil</div>";
       else if(v==="İZİN")inner="<div class='offblock'>İzin</div>";
       else inner="<div class='emptyblock'>+</div>";
-      h+="<td class='wkcell"+wk+"' onclick='openEd("+si+","+d+")'>"+inner+"</td>"});
+      h+="<td class='wkcell"+wk+"' onclick='openEd("+si+","+d+")'>"+lb+inner+"</td>"});
     h+="</tr>";
   });
   h+="</tbody><tfoot><tr><td class='wkname'>Kadro</td>";
@@ -490,7 +518,7 @@ function renderDay(cw){
   });
   const off=[];staff.forEach((s,si)=>{if(!shiftByVal(s._days[selDay]))off.push({s,si})});
   h+="<div class='scard F'><div class='shead'><div class='st'><span class='nm'>İzinli / Boş</span></div><div class='cnt'>"+off.length+"</div></div><div class='plist'>";
-  if(off.length)off.forEach(({s,si})=>{h+="<div class='prow' onclick='openEd("+si+","+selDay+")'>"+avHtml(s.name)+esc(s.name)+"</div>"});
+  if(off.length)off.forEach(({s,si})=>{const yk=s._days[selDay]==="YOK"?"<span class='wtag' style='margin-left:auto;color:var(--ink3);font-weight:600'>müsait değil</span>":"";h+="<div class='prow' onclick='openEd("+si+","+selDay+")'>"+avHtml(s.name)+esc(s.name)+yk+"</div>"});
   else h+="<div class='prow empty'>— herkes çalışıyor —</div>";
   h+="</div></div></div>";
   document.getElementById("dayView").innerHTML=h;
@@ -505,10 +533,11 @@ function renderPerson(cw){
   staff.forEach((s,i)=>{h+="<div class='pchip"+(i===selPerson?" on":"")+"' onclick='selectPerson("+i+")'>"+avHtml(s.name)+esc(s.name)+"</div>"});
   h+="</div>";
   const s=staff[selPerson];const p=personStats(s);const off=dim-p.tot;
+  h+="<div class='wabar'>"+avHtml(s.name)+"<div><b>"+esc(s.name)+"</b>"+(s.role?" <span class='roletag' style='background:"+roleColor(s.role)+"'>"+esc(s.role)+"</span>":"")+"<div style='font-size:11px;color:var(--ink2);margin-top:2px'>"+(s.phone?esc(s.phone):"telefon yok — Ayarlar'dan ekle")+"</div></div><button class='wa-btn' onclick='waSend("+selPerson+")'>&#128241; WhatsApp'a Gönder</button></div>";
   h+="<div class='psum'><div class='pstat'><b>"+p.net+"s</b><span>net saat</span></div><div class='pstat'><b>"+p.tot+"</b><span>vardiya</span></div><div class='pstat'><b>"+p.sh.S+" / "+p.sh.O+" / "+p.sh.G+"</b><span>sab / öğl / gece</span></div><div class='pstat'><b>"+off+"</b><span>izin günü</span></div>"+(p.cost&&(+cfg.rate>0||s.rate)?"<div class='pstat'><b>"+p.cost.toLocaleString('tr')+" €</b><span>ücret</span></div>":"")+"</div>";
   h+="<div class='daylist'>";
-  for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const v=s._days[d];const sh=shiftByVal(v);const k=sh?sh.key:"F";const badge=sh?(sh.start.slice(0,5)+"–"+sh.end.slice(0,5)):(v==="İZİN"?"İzin":"—");const w=cw[selPerson+"_"+d]?"<span class='wtag'>&#9650;</span>":"";
-    h+="<div class='dayrow"+wk+"' onclick='openEd("+selPerson+","+d+")'><div class='dd'>"+(d+1)+"</div><div class='dw'>"+TRDAY[dow]+"</div>"+w+"<div class='sb "+k+"'>"+badge+"</div></div>"}
+  for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const v=s._days[d];const sh=shiftByVal(v);const k=sh?sh.key:(v==="YOK"?"Y":"F");const badge=sh?(sh.start.slice(0,5)+"–"+sh.end.slice(0,5)):(v==="YOK"?"Müsait değil":(v==="İZİN"?"İzin":"—"));const w=cw[selPerson+"_"+d]?"<span class='wtag'>&#9650;</span>":"";const lk=(s._lock||[]).indexOf(d)>=0?"<span style='opacity:.5;font-size:11px'>&#128274;</span>":"";
+    h+="<div class='dayrow"+wk+"' onclick='openEd("+selPerson+","+d+")'><div class='dd'>"+(d+1)+"</div><div class='dw'>"+TRDAY[dow]+"</div>"+lk+w+"<div class='sb "+k+"'>"+badge+"</div></div>"}
   h+="</div>";
   document.getElementById("personView").innerHTML=h;
 }
@@ -522,7 +551,7 @@ function renderMonth(cw){
   h+="<th class='sumcol sumhead sc-net'>NET</th><th class='sumcol sumhead sc-vard'>V</th></tr></thead><tbody>";
   staff.forEach((s,si)=>{const p=personStats(s);
     h+="<tr><td class='namecol'>"+esc(s.name)+"</td>";
-    for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("m-"+sh.key):(v==="İZİN"?"m-off":"");const wn=cw[si+"_"+d]?" warn":"";const disp=sh?(sh.start.slice(0,5)):(v==="İZİN"?"İ":"");h+="<td class='mcell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
+    for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("m-"+sh.key):(v==="YOK"?"m-yok":(v==="İZİN"?"m-off":""));const wn=cw[si+"_"+d]?" warn":"";const disp=sh?(sh.start.slice(0,5)):(v==="YOK"?"×":(v==="İZİN"?"İ":""));h+="<td class='mcell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
     h+="<td class='sumcol sc-net'>"+p.net+"</td><td class='sumcol sc-vard'>"+p.tot+"</td></tr>"});
   h+="</tbody><tfoot>";
   [["Sabah",cfg.ns,"S"],["Öğlen",cfg.no,"O"],["Gece",cfg.ng,"G"]].forEach(([lbl,target,k])=>{h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
@@ -547,19 +576,25 @@ function renderSettings(){
 function cfgIn(id,lbl,val,step){return "<div><label>"+lbl+"</label><input type='number' id='"+id+"' min='0'"+(step?" step='"+step+"'":"")+" value='"+val+"'></div>"}
 function syncCfgInputs(){/* değerler renderSettings'te set ediliyor */}
 function saveCfg(){const g=id=>+document.getElementById(id).value;cfg.ns=g("cfgNS");cfg.no=g("cfgNO");cfg.ng=g("cfgNG");cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");persist();render()}
-function renderStaffTbl(){const el=document.getElementById("staffTbl");if(!el)return;let h="<tr><th>Personel</th><th>Gece?</th><th>Ücret €</th><th></th></tr>";staff.forEach((s,i)=>{h+="<tr><td><div class='nmc'>"+avHtml(s.name)+"<input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></div></td><td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td><td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td><td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});el.innerHTML=h}
-function setName(i,v){staff[i].name=v.trim().toUpperCase();store.staff=staff.map(({_days,...r})=>r);persist();render()}
-function setNight(i,ch){staff[i].noNight=!ch;store.staff=staff.map(({_days,...r})=>r);persist()}
-function setRate(i,v){staff[i].rate=v===""?null:+v;store.staff=staff.map(({_days,...r})=>r);persist();render()}
-function addStaff(){const n=prompt("Personel adı:");if(!n)return;const dim=daysInMonth(year,month);staff.push({name:n.trim().toUpperCase(),noNight:false,rate:null,_days:Array(dim).fill("")});store.staff=staff.map(({_days,...r})=>r);persist();render()}
-function delStaff(i){if(!confirm(staff[i].name+" silinsin mi?"))return;staff.splice(i,1);store.staff=staff.map(({_days,...r})=>r);persist();render()}
+function renderStaffTbl(){const el=document.getElementById("staffTbl");if(!el)return;let h="<tr><th>Personel</th><th>Rol</th><th>Telefon</th><th>Gece?</th><th>Ücret €</th><th></th></tr>";staff.forEach((s,i)=>{h+="<tr><td><div class='nmc'>"+avHtml(s.name)+"<input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></div></td><td><input type='text' style='width:94px' value='"+esc(s.role||"")+"' placeholder='—' onchange='setRole("+i+",this.value)'></td><td><input type='text' style='width:118px' value='"+esc(s.phone||"")+"' placeholder='+49…' onchange='setPhone("+i+",this.value)'></td><td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td><td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td><td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});el.innerHTML=h}
+function setName(i,v){staff[i].name=v.trim().toUpperCase();store.staff=cleanStaff();persist();render()}
+function setNight(i,ch){staff[i].noNight=!ch;store.staff=cleanStaff();persist()}
+function setRate(i,v){staff[i].rate=v===""?null:+v;store.staff=cleanStaff();persist();render()}
+function setRole(i,v){staff[i].role=v.trim();store.staff=cleanStaff();persist();render()}
+function setPhone(i,v){staff[i].phone=v.trim();store.staff=cleanStaff();persist();render()}
+function addStaff(){const n=prompt("Personel adı:");if(!n)return;const dim=daysInMonth(year,month);staff.push({name:n.trim().toUpperCase(),role:"",phone:"",noNight:false,rate:null,_days:Array(dim).fill(""),_lock:[]});store.staff=cleanStaff();persist();render()}
+function delStaff(i){if(!confirm(staff[i].name+" silinsin mi?"))return;staff.splice(i,1);store.staff=cleanStaff();persist();render()}
 
 let curSi,curDi;
-function openEd(si,di){curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();
-  let h="<div class='ehead'>"+avHtml(s.name)+"<div><h4>"+esc(s.name)+"</h4><div class='who'>"+(di+1)+" "+monTitle()+" · "+TRDAYL[dow]+" · şu an: "+(s._days[di]||"boş")+"</div></div></div><div class='chips'>";
+function cellLabel(v){const sh=shiftByVal(v);if(sh)return sh.start+"-"+sh.end+" ("+sh.label+")";if(v==="YOK")return "müsait değil";if(v==="İZİN")return "izin";return "boş"}
+function openEd(si,di){curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();const locked=(s._lock||[]).indexOf(di)>=0;
+  let h="<div class='ehead'>"+avHtml(s.name)+"<div><h4>"+esc(s.name)+(s.role?" <span class='roletag' style='background:"+roleColor(s.role)+"'>"+esc(s.role)+"</span>":"")+"</h4><div class='who'>"+(di+1)+" "+monTitle()+" · "+TRDAYL[dow]+" · "+cellLabel(s._days[di])+"</div></div></div><div class='chips'>";
   cfg.shifts.forEach(sh=>{h+="<div class='chip "+sh.key+"' onclick='setVal(\""+sh.start+"-"+sh.end+"\")'><small>"+sh.label+"</small>"+sh.start+"-"+sh.end+"</div>"});
-  h+="</div><div class='chips' style='margin-top:9px'><div class='chip off' onclick='setVal(\"İZİN\")'>İZİN</div><div class='chip' onclick='setVal(\"\")'>Temizle</div></div><div class='ed-actions'><button onclick='closeEd()'>Kapat</button></div>";
+  h+="</div><div class='chips' style='margin-top:9px'><div class='chip off' onclick='setVal(\"İZİN\")'>İZİN</div><div class='chip yok' onclick='setVal(\"YOK\")'>Müsait Değil</div><div class='chip' onclick='setVal(\"\")'>Temizle</div></div>";
+  h+="<button class='ed-lock"+(locked?" on":"")+"' onclick='toggleLock()'>"+(locked?"&#128274; Kilitli — otomatik üretim atlar":"&#128275; Kilitle")+"</button>";
+  h+="<div class='ed-actions'><button onclick='closeEd()'>Kapat</button></div>";
   document.getElementById("editor").innerHTML=h;document.getElementById("overlay").classList.add("on")}
+function toggleLock(){const s=staff[curSi];s._lock=s._lock||[];const idx=s._lock.indexOf(curDi);if(idx>=0)s._lock.splice(idx,1);else s._lock.push(curDi);persist();render();openEd(curSi,curDi)}
 function setVal(v){staff[curSi]._days[curDi]=v;persist();render();closeEd()}
 function closeEd(){document.getElementById("overlay").classList.remove("on")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeEd()});
@@ -572,6 +607,19 @@ function exportXlsx(){const dim=daysInMonth(year,month);
   [["Sabah","S",cfg.ns],["Öğlen","O",cfg.no],["Gece","G",cfg.ng]].forEach(([lbl,k,t])=>{const line=[lbl+" ("+t+")"];for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});line.push(c)}line.push("","","");rows.push(line)});
   const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MONTHS[month-1]+" "+year);
   XLSX.writeFile(wb,"vardiya_"+year+"-"+String(month).padStart(2,"0")+".xlsx")}
+
+const ROLECOLORS=["#4a6d82","#93555b","#5a7ba0","#7d5a72","#3f5c86","#8a5f66","#5e7590","#7a6b8a"];
+function roleColor(r){return r?ROLECOLORS[hashN(r)%ROLECOLORS.length]:"#8b93a1"}
+function waText(s){const dim=daysInMonth(year,month);let L=[MONTHT[month-1]+" "+year+" — Vardiya Programin",""];for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const v=s._days[d];const sh=shiftByVal(v);const t=sh?(sh.start+"-"+sh.end+" ("+sh.label+")"):(v==="YOK"?"Musait degil":(v==="İZİN"?"Izin":"—"));L.push((d+1)+" "+TRDAY[dow]+": "+t)}L.push("","Hasi Elektronic Vardiya Planlayici");return L.join("\n")}
+function waSend(i){const s=staff[i];const ph=(s.phone||"").replace(/[^0-9]/g,"");const url="https://wa.me/"+ph+"?text="+encodeURIComponent(waText(s));window.open(url,"_blank")}
+function toggleMenu(e){if(e)e.stopPropagation();const m=document.getElementById("toolsMenu");if(m.style.display==="none"){renderMenu();m.style.display="block"}else m.style.display="none"}
+function closeMenu(){const m=document.getElementById("toolsMenu");if(m)m.style.display="none"}
+function renderMenu(){const t=store.templates||{};let h="<div class='msec'>Ay</div><button onclick='copyNextMonth()'>&#8594; Sonraki aya kopyala</button><div class='msec'>Şablonlar</div><button onclick='saveTemplate()'>&#128190; Bu ayı şablon kaydet</button>";const ns=Object.keys(t);if(ns.length)ns.forEach(n=>{h+="<div class='tplrow'><button onclick='applyTemplate(\""+esc(n)+"\")'>&#9656; "+esc(n)+"</button><button class='del' onclick='deleteTemplate(\""+esc(n)+"\")'>sil</button></div>"});else h+="<div style='font-size:11px;color:var(--ink3);padding:6px 11px'>henüz şablon yok</div>";document.getElementById("toolsMenu").innerHTML=h}
+function copyNextMonth(){let m=month+1,y=year;if(m>12){m=1;y++}const dim2=daysInMonth(y,m);const tk=y+"-"+m;store.months=store.months||{};if(store.months[tk]&&!confirm(MONTHT[m-1]+" "+y+" zaten dolu. Üzerine yazılsın mı?"))return;const tgt={};staff.forEach(s=>{const d=(s._days||[]).slice(0,dim2);while(d.length<dim2)d.push("");tgt[s.name]=d});store.months[tk]=tgt;sSet("vardiya_adv",JSON.stringify(store));closeMenu();alert(MONTHT[m-1]+" "+y+" ayına kopyalandı.")}
+function saveTemplate(){let n=prompt("Şablon adı:");if(!n)return;n=n.replace(/["'\\]/g,"").trim();if(!n)return;store.templates=store.templates||{};const t={};staff.forEach(s=>t[s.name]=s._days.slice());store.templates[n]=t;sSet("vardiya_adv",JSON.stringify(store));renderMenu();alert("Şablon kaydedildi: "+n)}
+function applyTemplate(n){const t=(store.templates||{})[n];if(!t)return;if(!confirm("'"+n+"' şablonu bu aya uygulansın mı? Mevcut plan değişir."))return;const dim=daysInMonth(year,month);staff.forEach(s=>{const d=(t[s.name]||[]).slice(0,dim);while(d.length<dim)d.push("");s._days=d});persist();render();closeMenu()}
+function deleteTemplate(n){if(!confirm("'"+n+"' şablonu silinsin mi?"))return;delete (store.templates||{})[n];sSet("vardiya_adv",JSON.stringify(store));renderMenu()}
+document.addEventListener("click",()=>closeMenu());
 
 load();
 </script>
