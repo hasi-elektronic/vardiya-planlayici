@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vardiya Planlayıcı</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -340,6 +341,20 @@ body.ro .actions{display:none!important}
 .shtbl input[type=time],.shtbl input[type=number]{font-family:"JetBrains Mono",monospace}
 .shtbl input:focus{outline:none;border-color:var(--accent)}
 .shdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.fairtbl{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.fhead{display:grid;grid-template-columns:2fr 1.6fr .8fr .8fr .9fr;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);font-weight:700}
+.fhead span:not(:first-child){text-align:right}
+.frow{display:grid;grid-template-columns:2fr 1.6fr .8fr .8fr .9fr;gap:8px;padding:9px 16px;border-bottom:1px solid var(--line2);align-items:center;cursor:pointer;font-size:12.5px;font-weight:600}
+.frow span:not(.fn){text-align:right;font-family:"JetBrains Mono",monospace}
+.frow:hover{background:var(--panel2)}
+.frow.hi{background:color-mix(in srgb,var(--warn) 7%,transparent)}
+.frow.lo{background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.fn{display:flex;align-items:center;gap:9px;min-width:0}
+.fn .av{width:28px;height:28px;font-size:11px}
+.fnet{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.fbar{position:absolute;left:0;top:50%;transform:translateY(-50%);height:20px;background:color-mix(in srgb,var(--accent) 16%,transparent);border-radius:5px;z-index:0}
+.fnet b{position:relative;z-index:1}
+@media(max-width:640px){.fhead,.frow{grid-template-columns:1.6fr 1.3fr .7fr .7fr}.fhead span:nth-child(5),.frow span:nth-child(5){display:none}}
 </style>
 </head>
 <body>
@@ -379,6 +394,7 @@ body.ro .actions{display:none!important}
       <div id="dayView" class="viewpane" style="display:none"></div>
       <div id="personView" class="viewpane" style="display:none"></div>
       <div id="monthView" class="viewpane" style="display:none"><div class="gridbox"><table class="mth" id="grid"></table></div></div>
+      <div id="fairView" class="viewpane" style="display:none"></div>
       <div id="settingsView" class="viewpane" style="display:none"></div>
     </div>
   </div>
@@ -398,11 +414,12 @@ const ICON={
   day:"<circle cx='12' cy='12' r='9'/><polyline points='12 7 12 12 15 14'/>",
   person:"<path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/>",
   month:"<rect x='3' y='3' width='7' height='7' rx='1'/><rect x='14' y='3' width='7' height='7' rx='1'/><rect x='14' y='14' width='7' height='7' rx='1'/><rect x='3' y='14' width='7' height='7' rx='1'/>",
+  fair:"<line x1='6' y1='20' x2='6' y2='14'/><line x1='12' y1='20' x2='12' y2='4'/><line x1='18' y1='20' x2='18' y2='10'/>",
   settings:"<line x1='4' y1='21' x2='4' y2='14'/><line x1='4' y1='10' x2='4' y2='3'/><line x1='12' y1='21' x2='12' y2='12'/><line x1='12' y1='8' x2='12' y2='3'/><line x1='20' y1='21' x2='20' y2='16'/><line x1='20' y1='12' x2='20' y2='3'/><line x1='1' y1='14' x2='7' y2='14'/><line x1='9' y1='8' x2='15' y2='8'/><line x1='17' y1='16' x2='23' y2='16'/>",
   moon:"<path d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/>",
   sun:"<circle cx='12' cy='12' r='5'/><line x1='12' y1='1' x2='12' y2='3'/><line x1='12' y1='21' x2='12' y2='23'/><line x1='4.2' y1='4.2' x2='5.6' y2='5.6'/><line x1='18.4' y1='18.4' x2='19.8' y2='19.8'/><line x1='1' y1='12' x2='3' y2='12'/><line x1='21' y1='12' x2='23' y2='12'/><line x1='4.2' y1='19.8' x2='5.6' y2='18.4'/><line x1='18.4' y1='5.6' x2='19.8' y2='4.2'/>"
 };
-const NAV=[{v:"week",l:"Program",i:"week"},{v:"day",l:"Gün",i:"day"},{v:"person",l:"Ekip",i:"person"},{v:"month",l:"Ay",i:"month"},{v:"settings",l:"Ayarlar",i:"settings"}];
+const NAV=[{v:"week",l:"Program",i:"week"},{v:"day",l:"Gün",i:"day"},{v:"person",l:"Ekip",i:"person"},{v:"month",l:"Ay",i:"month"},{v:"fair",l:"Denge",i:"fair"},{v:"settings",l:"Ayarlar",i:"settings"}];
 function svg(k){return "<svg class='i' viewBox='0 0 24 24'>"+ICON[k]+"</svg>"}
 const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00",need:6,roleNeeds:{}},{key:"O",label:"Öğlen",start:"15:00",end:"23:00",need:6,roleNeeds:{}},{key:"G",label:"Gece",start:"23:00",end:"07:00",need:3,roleNeeds:{}}]};
@@ -508,7 +525,7 @@ function render(){
   document.getElementById("ptitle").textContent=(NAV.find(n=>n.v===view)||{l:"Program"}).l;
   document.getElementById("roBanner").innerHTML=readOnly?"<div class='robanner'>&#128065; Yayınlanan program \u00b7 salt okunur</div>":"";
   // stats + alert (planlama görünümlerinde)
-  const showStats=view!=="settings";
+  const showStats=view!=="settings"&&view!=="fair";
   document.getElementById("statbar").style.display=showStats?"":"none";
   if(showStats){
     let totNet=0,totCost=0,totShift=0;staff.forEach(s=>{const p=personStats(s);totNet+=p.net;totCost+=p.cost;totShift+=p.tot});
@@ -518,9 +535,9 @@ function render(){
       (rate>0?stat(totCost.toLocaleString("tr")+" €","aylık işçilik","t-cost"):"")+stat(W.length,"kural uyarısı",W.length?"t-warn":"t-ok");
     renderAlert(W);
   } else {document.getElementById("alertBar").innerHTML=""}
-  const panes={week:"weekView",day:"dayView",person:"personView",month:"monthView",settings:"settingsView"};
+  const panes={week:"weekView",day:"dayView",person:"personView",month:"monthView",fair:"fairView",settings:"settingsView"};
   Object.keys(panes).forEach(k=>document.getElementById(panes[k]).style.display=(view===k?"":"none"));
-  if(view==="week")renderWeek(cw);else if(view==="day")renderDay(cw);else if(view==="person")renderPerson(cw);else if(view==="month")renderMonth(cw);else renderSettings();
+  if(view==="week")renderWeek(cw);else if(view==="day")renderDay(cw);else if(view==="person")renderPerson(cw);else if(view==="month")renderMonth(cw);else if(view==="fair")renderFairness();else renderSettings();
 }
 function stat(v,l,t){return "<div class='stat "+(t||"")+"'><span class='sl'>"+l+"</span><b>"+v+"</b></div>"}
 function esc(s){return(s+"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}
@@ -596,7 +613,7 @@ function renderPerson(cw){
   const dim=daysInMonth(year,month);if(selPerson>=staff.length)selPerson=0;
   const s=staff[selPerson];const p=personStats(s);const off=dim-p.tot;
   let h="<div class='phead'><div class='pident'>"+avHtml(s.name)+"<div><b>"+esc(s.name)+"</b>"+(s.role?" <span class='roletag' style='background:"+roleColor(s.role)+"'>"+esc(s.role)+"</span>":"")+"<div class='psub'>"+(s.phone?esc(s.phone):"telefon yok — Ayarlar'dan ekle")+"</div></div></div>";
-  h+="<div class='pctrl'><button class='pnav' onclick='personNav(-1)'>&#8249;</button><select class='pselect' onchange='selectPerson(+this.value)'>"+staff.map((x,i)=>"<option value='"+i+"'"+(i===selPerson?" selected":"")+">"+esc(x.name)+"</option>").join("")+"</select><button class='pnav' onclick='personNav(1)'>&#8250;</button><button class='wa-btn' onclick='waSend("+selPerson+")'>&#128241; WhatsApp</button></div></div>";
+  h+="<div class='pctrl'><button class='pnav' onclick='personNav(-1)'>&#8249;</button><select class='pselect' onchange='selectPerson(+this.value)'>"+staff.map((x,i)=>"<option value='"+i+"'"+(i===selPerson?" selected":"")+">"+esc(x.name)+"</option>").join("")+"</select><button class='pnav' onclick='personNav(1)'>&#8250;</button><button class='wa-btn' onclick='waSend("+selPerson+")'>&#128241; WhatsApp</button><button onclick='exportPDFOne()'>&#128196; PDF</button></div></div>";
   h+="<div class='psum'><div class='pstat'><b>"+p.net+"s</b><span>net saat</span></div><div class='pstat'><b>"+p.tot+"</b><span>vardiya</span></div><div class='pstat'><b>"+p.sh.S+" / "+p.sh.O+" / "+p.sh.G+"</b><span>sab / öğl / gece</span></div><div class='pstat'><b>"+off+"</b><span>izin günü</span></div>"+(p.cost&&(+cfg.rate>0||s.rate)?"<div class='pstat'><b>"+p.cost.toLocaleString('tr')+" €</b><span>ücret</span></div>":"")+"</div>";
   h+="<div class='daylist'>";
   for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const v=s._days[d];const sh=shiftByVal(v);const k=sh?sh.key:(v==="YOK"?"Y":"F");const badge=sh?(sh.start.slice(0,5)+"–"+sh.end.slice(0,5)):(v==="YOK"?"Müsait değil":(v==="İZİN"?"İzin":"—"));const w=cw[selPerson+"_"+d]?"<span class='wtag'>&#9650;</span>":"";const lk=(s._lock||[]).indexOf(d)>=0?"<span style='opacity:.5;font-size:11px'>&#128274;</span>":"";
@@ -709,7 +726,7 @@ function waText(s){const dim=daysInMonth(year,month);let L=[MONTHT[month-1]+" "+
 function waSend(i){const s=staff[i];const ph=(s.phone||"").replace(/[^0-9]/g,"");const url="https://wa.me/"+ph+"?text="+encodeURIComponent(waText(s));window.open(url,"_blank")}
 function toggleMenu(e){if(e)e.stopPropagation();const m=document.getElementById("toolsMenu");if(m.style.display==="none"){renderMenu();m.style.display="block"}else m.style.display="none"}
 function closeMenu(){const m=document.getElementById("toolsMenu");if(m)m.style.display="none"}
-function renderMenu(){const t=store.templates||{};let h="<div class='msec'>Ay</div><button onclick='copyNextMonth()'>&#8594; Sonraki aya kopyala</button><div class='msec'>Şablonlar</div><button onclick='saveTemplate()'>&#128190; Bu ayı şablon kaydet</button>";const ns=Object.keys(t);if(ns.length)ns.forEach(n=>{h+="<div class='tplrow'><button onclick='applyTemplate(\""+esc(n)+"\")'>&#9656; "+esc(n)+"</button><button class='del' onclick='deleteTemplate(\""+esc(n)+"\")'>sil</button></div>"});else h+="<div style='font-size:11px;color:var(--ink3);padding:6px 11px'>henüz şablon yok</div>";document.getElementById("toolsMenu").innerHTML=h}
+function renderMenu(){const t=store.templates||{};let h="<div class='msec'>Ay</div><button onclick='copyNextMonth()'>&#8594; Sonraki aya kopyala</button><div class='msec'>Çıktı</div><button onclick='exportPDFAll();closeMenu()'>&#128196; Kişi programları (PDF)</button><div class='msec'>Şablonlar</div><button onclick='saveTemplate()'>&#128190; Bu ayı şablon kaydet</button>";const ns=Object.keys(t);if(ns.length)ns.forEach(n=>{h+="<div class='tplrow'><button onclick='applyTemplate(\""+esc(n)+"\")'>&#9656; "+esc(n)+"</button><button class='del' onclick='deleteTemplate(\""+esc(n)+"\")'>sil</button></div>"});else h+="<div style='font-size:11px;color:var(--ink3);padding:6px 11px'>henüz şablon yok</div>";document.getElementById("toolsMenu").innerHTML=h}
 function copyNextMonth(){let m=month+1,y=year;if(m>12){m=1;y++}const dim2=daysInMonth(y,m);const tk=y+"-"+m;store.months=store.months||{};if(store.months[tk]&&!confirm(MONTHT[m-1]+" "+y+" zaten dolu. Üzerine yazılsın mı?"))return;const tgt={};staff.forEach(s=>{const d=(s._days||[]).slice(0,dim2);while(d.length<dim2)d.push("");tgt[s.name]=d});store.months[tk]=tgt;sSet("vardiya_adv",JSON.stringify(store));closeMenu();alert(MONTHT[m-1]+" "+y+" ayına kopyalandı.")}
 function saveTemplate(){let n=prompt("Şablon adı:");if(!n)return;n=n.replace(/["'\\]/g,"").trim();if(!n)return;store.templates=store.templates||{};const t={};staff.forEach(s=>t[s.name]=s._days.slice());store.templates[n]=t;sSet("vardiya_adv",JSON.stringify(store));renderMenu();alert("Şablon kaydedildi: "+n)}
 function applyTemplate(n){const t=(store.templates||{})[n];if(!t)return;if(!confirm("'"+n+"' şablonu bu aya uygulansın mı? Mevcut plan değişir."))return;const dim=daysInMonth(year,month);staff.forEach(s=>{const d=(t[s.name]||[]).slice(0,dim);while(d.length<dim)d.push("");s._days=d});persist();render();closeMenu()}
@@ -728,6 +745,15 @@ function publicLink(){return location.origin+"/?w="+(cloud?cloud.id:"")}
 function copyPublicLink(){const l=publicLink();if(navigator.clipboard)navigator.clipboard.writeText(l).then(()=>alert("Link kopyalandi:\n"+l),()=>prompt("Kopyala:",l));else prompt("Kopyala:",l)}
 async function loadPublic(wid){readOnly=true;document.body.classList.add("ro");try{const r=await fetch(API+"/api/public?id="+encodeURIComponent(wid)).then(x=>x.json());store=(r.ok&&r.data)?r.data:{};if(!r.ok)setTimeout(()=>alert("Yayin bulunamadi veya kapali."),100)}catch(e){store={}}cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):JSON.parse(JSON.stringify(DEFAULT_CFG));if(!store.staff)store.staff=[];year=2026;month=7;view=(window.innerWidth<720?"day":"week");initTheme();setMonth(year,month,false)}
 function cloudCard(){let h="<div class='setcard cloudcard' style='grid-column:1/-1'><h3>&#9729; Bulut Senkron & Yay\u0131nla</h3>";if(!cloud||!cloud.id){h+="<div style='font-size:12px;color:var(--ink2)'>Verilerin \u015fu an sadece bu cihazda. Buluta ba\u011flarsan cihazlar aras\u0131 senkron olur ve yedeklenir.</div>";h+="<div class='row'><button class='primary' onclick='cloudConnect()'>"+(cloudBusy?"Ba\u011flan\u0131yor\u2026":"Buluta Ba\u011fla")+"</button><button onclick='cloudLinkPrompt()'>Cihaz Ba\u011fla (kod ile)</button></div>";}else{const last=cloud.pushedAt?new Date(cloud.pushedAt).toLocaleString("tr"):"\u2014";h+="<div style='font-size:12px;color:var(--ink2)'><span class='cloud-dot'></span>Ba\u011fl\u0131 \u00b7 ID <b class='mono'>"+esc(cloud.id)+"</b> \u00b7 son senkron: "+last+"</div>";h+="<div class='row'><button onclick='cloudPushNow()'>&#8593; \u015eimdi Y\u00fckle</button><button onclick='cloudPull(true)'>&#8595; \u015eimdi \u0130ndir</button><button onclick='cloudDisconnect()'>Ba\u011flant\u0131y\u0131 Kald\u0131r</button></div>";h+="<div style='margin-top:12px;font-size:10px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.04em'>Ba\u015fka cihaza ba\u011fla \u2014 kod:</div><div class='codebox'>"+esc(cloud.id+":"+cloud.token)+"</div>";h+="<div style='margin-top:16px'><h3 style='font-size:13px;margin:0 0 8px'>Yay\u0131nla (salt-okunur link)</h3>";if(cloud.published){h+="<div style='font-size:12px;color:var(--ink2)'>Program yay\u0131nda. Personelle payla\u015fabilece\u011fin link:</div><div class='codebox'>"+esc(publicLink())+"</div><div class='row'><button class='primary' onclick='copyPublicLink()'>Linki Kopyala</button><button onclick='cloudPublishToggle()'>Yay\u0131ndan Kald\u0131r</button></div>";}else{h+="<div style='font-size:12px;color:var(--ink2)'>Yay\u0131nlarsan herkes linkle program\u0131 salt-okunur g\u00f6rebilir (d\u00fczenleyemez).</div><div class='row'><button class='primary' onclick='cloudPublishToggle()'>Yay\u0131nla</button></div>";}h+="</div>";}h+="</div>";return h}
+
+let _pdfFonts=null;
+async function loadPdfFonts(){if(_pdfFonts)return _pdfFonts;const ab2b64=b=>{let s="";const u=new Uint8Array(b);const CH=0x8000;for(let i=0;i<u.length;i+=CH)s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));return btoa(s)};const base="https://cdn.jsdelivr.net/npm/@expo-google-fonts/roboto@0.2.3/";const arr=await Promise.all([fetch(base+"Roboto_400Regular.ttf").then(x=>x.arrayBuffer()),fetch(base+"Roboto_700Bold.ttf").then(x=>x.arrayBuffer())]);_pdfFonts={reg:ab2b64(arr[0]),bold:ab2b64(arr[1])};return _pdfFonts}
+function exportPDFOne(){exportPDF("one")}
+function exportPDFAll(){exportPDF("all")}
+async function exportPDF(scope){if(!window.jspdf){alert("PDF kutuphanesi yuklenemedi.");return}const list=scope==="one"?[selPerson]:staff.map((_,i)=>i);if(!list.length){alert("Personel yok.");return}let F;try{F=await loadPdfFonts()}catch(e){alert("Font yuklenemedi (internet?).");return}const J=window.jspdf.jsPDF;const doc=new J({unit:"pt",format:"a4"});doc.addFileToVFS("R.ttf",F.reg);doc.addFont("R.ttf","Roboto","normal");doc.addFileToVFS("RB.ttf",F.bold);doc.addFont("RB.ttf","Roboto","bold");list.forEach((idx,n)=>{if(n>0)doc.addPage();addPersonPage(doc,idx)});const fn=scope==="one"?("program_"+staff[selPerson].name.replace(/\s+/g,"_")+".pdf"):("vardiya_programlari_"+year+"-"+String(month).padStart(2,"0")+".pdf");doc.save(fn)}
+function addPersonPage(doc,idx){const s=staff[idx];const p=personStats(s);const dim=daysInMonth(year,month);const nightKeys=cfg.shifts.filter(sh=>pmin(sh.end)<=pmin(sh.start)).map(sh=>sh.key);let night=0,wknd=0,izin=0;for(let d=0;d<dim;d++){const sh=shiftByVal(s._days[d]);const dow=new Date(year,month-1,d+1).getDay();if(sh){if(nightKeys.indexOf(sh.key)>=0)night++;if(dow===0||dow===6)wknd++}else izin++}const W=595,M=40;doc.setFillColor(47,75,124);doc.rect(0,0,W,74,"F");doc.setTextColor(255);doc.setFont("Roboto","bold");doc.setFontSize(18);doc.text(MONTHT[month-1]+" "+year+" \u00b7 Vardiya Program\u0131",M,40);doc.setFont("Roboto","normal");doc.setFontSize(10);doc.text("Hasi Elektronic",M,58);doc.setTextColor(30,37,48);doc.setFont("Roboto","bold");doc.setFontSize(16);doc.text(s.name+(s.role?"   \u00b7   "+s.role:""),M,104);doc.setFont("Roboto","normal");doc.setFontSize(10);doc.setTextColor(90,100,116);doc.text("Net "+p.net+"s   \u00b7   "+p.tot+" vardiya   \u00b7   "+night+" gece   \u00b7   "+wknd+" hafta sonu   \u00b7   "+izin+" izin",M,120);let y=140;const rowH=20,cN=M+8,cD=M+52,cV=M+150;doc.setFillColor(47,75,124);doc.rect(M,y,W-2*M,22,"F");doc.setTextColor(255);doc.setFont("Roboto","bold");doc.setFontSize(10);doc.text("G\u00fcn",cN,y+15);doc.text("G\u00fcn Ad\u0131",cD,y+15);doc.text("Vardiya",cV,y+15);y+=22;doc.setFontSize(9.5);for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const v=s._days[d];const sh=shiftByVal(v);const wkend=(dow===0||dow===6);if(wkend)doc.setFillColor(244,242,237);else if(d%2)doc.setFillColor(247,248,250);else doc.setFillColor(255,255,255);doc.rect(M,y,W-2*M,rowH,"F");doc.setFont("Roboto","normal");doc.setTextColor(30,37,48);doc.text(String(d+1),cN,y+14);doc.setTextColor(90,100,116);doc.text(TRDAYL[dow],cD,y+14);let txt,col;if(sh){txt=sh.start+"-"+sh.end+"  ("+sh.label+")";col=sh.key==="S"?[45,85,128]:sh.key==="O"?[145,66,73]:[60,66,112]}else if(v==="YOK"){txt="M\u00fcsait de\u011fil";col=[150,155,165]}else if(v==="\u0130Z\u0130N"){txt="\u0130zin";col=[150,155,165]}else{txt="\u2014";col=[150,155,165]}doc.setTextColor(col[0],col[1],col[2]);doc.setFont("Roboto",sh?"bold":"normal");doc.text(txt,cV,y+14);y+=rowH}doc.setFont("Roboto","normal");doc.setFontSize(8);doc.setTextColor(150,155,165);doc.text("Hasi Elektronic \u00b7 Vardiya Planlay\u0131c\u0131 \u00b7 "+new Date().toLocaleDateString("tr"),M,822)}
+function fstat(v,l){return "<div class='stat'><span class='sl'>"+l+"</span><b>"+v+"</b></div>"}
+function renderFairness(){const dim=daysInMonth(year,month);const nightKeys=cfg.shifts.filter(sh=>pmin(sh.end)<=pmin(sh.start)).map(sh=>sh.key);const rows=staff.map((s,i)=>{const p=personStats(s);let night=0,wknd=0;for(let d=0;d<dim;d++){const sh=shiftByVal(s._days[d]);const dow=new Date(year,month-1,d+1).getDay();if(sh){if(nightKeys.indexOf(sh.key)>=0)night++;if(dow===0||dow===6)wknd++}}return {i:i,s:s,net:p.net,tot:p.tot,night:night,wknd:wknd}});rows.sort((a,b)=>b.net-a.net);const maxNet=Math.max.apply(null,[1].concat(rows.map(r=>r.net)));const nets=rows.map(r=>r.net),nights=rows.map(r=>r.night),wknds=rows.map(r=>r.wknd);const spread=a=>a.length?(Math.max.apply(null,a)-Math.min.apply(null,a)):0;const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):0;let h="<div class='navrow'><div class='lbl'>Denge / Adalet Raporu<small>"+monTitle()+" "+year+"</small></div></div>";h+="<div class='bar'>"+fstat(avg(nets).toFixed(0)+"s","ort. net saat")+fstat(spread(nets).toFixed(1)+"s","net fark (max-min)")+fstat(spread(nights),"gece fark\u0131")+fstat(spread(wknds),"hafta sonu fark\u0131")+"</div>";h+="<div class='fairtbl'><div class='fhead'><span>Personel</span><span>Net saat</span><span>Vardiya</span><span>Gece</span><span>H.sonu</span></div>";rows.forEach((r,idx)=>{const cls=idx===0?" hi":(idx===rows.length-1?" lo":"");h+="<div class='frow"+cls+"' onclick='selPerson="+r.i+";setView(\"person\")'><span class='fn'>"+avHtml(r.s.name)+esc(r.s.name)+(r.s.role?" <span class='roletag' style='background:"+roleColor(r.s.role)+"'>"+esc(r.s.role)+"</span>":"")+"</span><span class='fnet'><span class='fbar' style='width:"+Math.round(r.net/maxNet*100)+"%'></span><b>"+r.net+"s</b></span><span>"+r.tot+"</span><span>"+r.night+"</span><span>"+r.wknd+"</span></div>"});h+="</div>";document.getElementById("fairView").innerHTML=h}
 
 load();
 </script>
