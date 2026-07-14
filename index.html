@@ -10,21 +10,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f5f7;--panel:#ffffff;--panel2:#f8f9fb;--ink:#212936;--ink2:#5c6674;--ink3:#98a1af;--line:#e6e8ec;--line2:#f0f1f4;
-  --accent:#3f4d63;--accent2:#5a7a99;--accent-soft:#eceff3;--warn:#a9564f;--warn-soft:#f6efed;--wknd:#f7f7f5;--ok:#527e63;
-  --sab-bg:#eef2ef;--sab-tx:#4c6b58;--sab-ac:#8aa894;
-  --ogl-bg:#f4efe6;--ogl-tx:#836f4c;--ogl-ac:#c1ab84;
-  --gec-bg:#eceff4;--gec-tx:#4f5d73;--gec-ac:#8695ac;
+  --bg:#f4f5f7;--panel:#ffffff;--panel2:#f8f9fb;--ink:#1e2530;--ink2:#5c6674;--ink3:#98a1af;--line:#e5e7ec;--line2:#eff1f4;
+  --accent:#2f4b7c;--accent2:#a8434c;--accent-soft:#e9edf4;--warn:#a8434c;--warn-soft:#f6eceb;--wknd:#f6f6f4;--ok:#3f6e7d;
+  --sab-bg:#e8eff7;--sab-tx:#2d5580;--sab-ac:#6a92c1;
+  --ogl-bg:#f6eced;--ogl-tx:#914249;--ogl-ac:#c06a71;
+  --gec-bg:#eaeaf3;--gec-tx:#3c4270;--gec-ac:#666aa0;
   --off-bg:#f1f2f5;--off-tx:#8b93a1;--off-ac:#ccd1d9;
   --shadow:0 1px 2px rgba(30,37,48,.04),0 3px 12px rgba(30,37,48,.045);
   --shadow-lg:0 20px 50px rgba(30,37,48,.2);
 }
 [data-theme="dark"]{
   --bg:#12151b;--panel:#191d24;--panel2:#1e232b;--ink:#e4e7ec;--ink2:#98a1af;--ink3:#69727e;--line:#2a2f38;--line2:#22272f;
-  --accent:#8592a8;--accent2:#7d97b0;--accent-soft:#252b36;--warn:#c17b76;--warn-soft:#2a1f1e;--wknd:#171a1f;--ok:#7fa88b;
-  --sab-bg:#1c2620;--sab-tx:#8fb39c;--sab-ac:#5f7d69;
-  --ogl-bg:#2a251c;--ogl-tx:#c2a878;--ogl-ac:#8a7a54;
-  --gec-bg:#1e242e;--gec-tx:#93a2ba;--gec-ac:#5d6b82;
+  --accent:#6f8fc0;--accent2:#cc7f88;--accent-soft:#242c3a;--warn:#c47c82;--warn-soft:#2a1e20;--wknd:#171a1f;--ok:#6f9aa5;
+  --sab-bg:#172433;--sab-tx:#8fb2d8;--sab-ac:#496890;
+  --ogl-bg:#2c1e20;--ogl-tx:#d3949a;--ogl-ac:#8a565c;
+  --gec-bg:#1c2033;--gec-tx:#9aa0cc;--gec-ac:#565b86;
   --off-bg:#20252d;--off-tx:#7e8896;--off-ac:#39424e;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
   --shadow-lg:0 24px 60px rgba(0,0,0,.65);
@@ -325,7 +325,7 @@ const TRDAYL=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumar
 const MONTHS=["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
 const MONTHT=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const SEED_NAMES=["ESENGÜL","ALİ","HÜSEYİN","SEVHAN","OĞUZHAN","TESLİME","MERVE","ŞERİFE","DİLEK","ALİ KEMAL","MEHMET","MUSTAFA","TUĞBA","ÖZGE","NİSA","ESMA","ESRA","HATİCE","GÜLSÜM","RECEP AVCI"];
-const AVCOLORS=["#6b7a99","#7a9483","#a08a6b","#94788a","#6f8a99","#8a7d99","#99806b","#7f9199","#8892a5","#79918a","#9a8f7d","#748a94"];
+const AVCOLORS=["#4f6b96","#8a4a52","#5a7ba0","#96545c","#3f5c86","#7d5a72","#5e7590","#8a5f66","#4a6d82","#6a5b8a","#456589","#93555b"];
 const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
 
