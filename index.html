@@ -652,7 +652,7 @@ function renderSettings(){
     cfgIn("cfgWeekly","Haftalık max (s)",cfg.weekly)+cfgIn("cfgRate","Saat ücreti €",cfg.rate,"0.5")+
     "</div><div style='margin-top:14px'><button class='primary' onclick='saveCfg()'>Kuralları Kaydet</button></div></div>"+
     "<div class='setcard'><h3>Personel <button style='float:right' onclick='addStaff()'>+ Ekle</button></h3><div style='overflow-x:auto'><table class='stafftbl' id='staffTbl'></table></div>"+
-    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Rol atarsan üstteki vardiya tablosunda rol-bazlı kadro belirleyebilirsin.</div></div>"+cloudCard()+"</div>";
+    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Rol atarsan üstteki vardiya tablosunda rol-bazlı kadro belirleyebilirsin.</div></div>"+cloudCard()+"<div style='grid-column:1/-1;text-align:center;font-size:11px;color:var(--ink3);padding:8px'>Vardiya Planlayıcı · sürüm 1.0</div></div>";
   document.getElementById("settingsView").innerHTML=h;renderStaffTbl();
 }
 function ensureShifts(){if(!cfg.shifts||!cfg.shifts.length)cfg.shifts=JSON.parse(JSON.stringify(DEFAULT_CFG.shifts));cfg.shifts.forEach(sh=>{if(sh.need==null)sh.need=sh.key==="S"?(cfg.ns!=null?cfg.ns:6):sh.key==="O"?(cfg.no!=null?cfg.no:6):sh.key==="G"?(cfg.ng!=null?cfg.ng:3):0;if(!sh.roleNeeds)sh.roleNeeds={}})}
