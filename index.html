@@ -333,6 +333,13 @@ body.ro .actions{display:none!important}
 .cloudcard .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .codebox{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;word-break:break-all;user-select:all;margin-top:7px}
 .cloud-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px}
+.shtbl{border-collapse:collapse;font-size:12px}
+.shtbl th{text-align:left;color:var(--ink2);font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line);letter-spacing:.03em;font-weight:700;white-space:nowrap}
+.shtbl td{padding:5px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.shtbl input[type=text],.shtbl input[type=time],.shtbl input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-weight:600;background:var(--panel2);color:var(--ink)}
+.shtbl input[type=time],.shtbl input[type=number]{font-family:"JetBrains Mono",monospace}
+.shtbl input:focus{outline:none;border-color:var(--accent)}
+.shdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -398,7 +405,7 @@ const ICON={
 const NAV=[{v:"week",l:"Program",i:"week"},{v:"day",l:"Gün",i:"day"},{v:"person",l:"Ekip",i:"person"},{v:"month",l:"Ay",i:"month"},{v:"settings",l:"Ayarlar",i:"settings"}];
 function svg(k){return "<svg class='i' viewBox='0 0 24 24'>"+ICON[k]+"</svg>"}
 const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
-  shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
+  shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00",need:6,roleNeeds:{}},{key:"O",label:"Öğlen",start:"15:00",end:"23:00",need:6,roleNeeds:{}},{key:"G",label:"Gece",start:"23:00",end:"07:00",need:3,roleNeeds:{}}]};
 
 let store,key,year,month,staff,cfg;
 let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false;
@@ -459,7 +466,7 @@ function restBetween(prevSh,nextSh){let pe=pmin(prevSh.end);if(pe<=pmin(prevSh.s
 
 function generate(){
   const dim=daysInMonth(year,month);
-  const S=cfg.shifts.map(sh=>Object.assign({need: sh.key==="S"?cfg.ns: sh.key==="O"?cfg.no: sh.key==="G"?cfg.ng:0},sh));
+  ensureShifts();const S=cfg.shifts.map(sh=>Object.assign({},sh));
   staff.forEach(s=>{const lk=s._lock||[];s._days=s._days.map((v,i)=>((lk.indexOf(i)>=0||v==="YOK")?v:""))});
   const st={};staff.forEach(s=>st[s.name]={last:null,streak:0,tot:0,g:0});
   const elig=(s,sh)=>{const t=st[s.name];if(t.streak>=cfg.streak)return false;if(sh.key==="G"&&s.noNight)return false;if(t.last===null)return true;const prev=S.find(x=>x.key===t.last);return restBetween(prev,sh)>=cfg.rest};
@@ -467,13 +474,13 @@ function generate(){
   for(let di=0;di<dim;di++){
     const cnt={S:0,O:0,G:0};const used=new Set();
     staff.forEach(s=>{const sh=shiftByVal(s._days[di]);const isLk=(s._lock||[]).indexOf(di)>=0;if(sh){cnt[sh.key]=(cnt[sh.key]||0)+1;used.add(s.name)}else if(s._days[di]==="YOK"||s._days[di]==="İZİN"||isLk)used.add(s.name)});
-    for(const sh of S){let need=sh.need-(cnt[sh.key]||0);if(need<=0)continue;let pool=staff.filter(s=>!used.has(s.name)&&s._days[di]===""&&elig(s,sh));pool.sort((a,b)=>score(a,sh)-score(b,sh));const take=pool.slice(0,need);if(take.length<need)return {ok:false,day:di+1,shift:sh.label,got:(cnt[sh.key]||0)+take.length};take.forEach(s=>{s._days[di]=sh.start+"-"+sh.end;used.add(s.name)})}
+    for(const sh of S){let cur=cnt[sh.key]||0;if(cur>=sh.need)continue;const rn=sh.roleNeeds||{};const have={};staff.forEach(s=>{const x=shiftByVal(s._days[di]);if(x&&x.key===sh.key)have[s.role||""]=(have[s.role||""]||0)+1});for(const role in rn){let rneed=rn[role]-(have[role]||0);if(rneed<=0)continue;let pool=staff.filter(s=>!used.has(s.name)&&s._days[di]===""&&(s.role||"")===role&&elig(s,sh));pool.sort((a,b)=>score(a,sh)-score(b,sh));const take=pool.slice(0,rneed);if(take.length<rneed)return {ok:false,day:di+1,shift:sh.label,role:role,got:cur+take.length};take.forEach(s=>{s._days[di]=sh.start+"-"+sh.end;used.add(s.name);cur++})}let rem=sh.need-cur;if(rem>0){let pool=staff.filter(s=>!used.has(s.name)&&s._days[di]===""&&elig(s,sh));pool.sort((a,b)=>score(a,sh)-score(b,sh));const take=pool.slice(0,rem);if(take.length<rem)return {ok:false,day:di+1,shift:sh.label,got:cur+take.length};take.forEach(s=>{s._days[di]=sh.start+"-"+sh.end;used.add(s.name);cur++})}}
     staff.forEach(s=>{const sh=shiftByVal(s._days[di]);const t=st[s.name];if(sh){t.last=sh.key;t.streak++;t.tot++;if(sh.key==="G")t.g++}else{t.last=null;t.streak=0}});
   }
   staff.forEach(s=>{for(let i=0;i<dim;i++)if(s._days[i]==="")s._days[i]="İZİN"});
   return {ok:true};
 }
-function doGenerate(){const r=generate();if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+" vardiyası dolmadı ("+r.got+" kişi). Kadro sayısını veya 'gece yapamaz' kısıtlarını gözden geçir.");render();return}persist();render()}
+function doGenerate(){const r=generate();if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+(r.role?" · "+r.role+" rolü":"")+" dolmadı ("+r.got+" kişi). Kadro/rol sayılarını veya kısıtları gözden geçir.");render();return}persist();render()}
 function clearMonth(){if(!confirm("Bu ayın planı silinsin mi?"))return;const dim=daysInMonth(year,month);staff.forEach(s=>s._days=Array(dim).fill(""));persist();render()}
 
 function warnings(){
@@ -485,12 +492,13 @@ function warnings(){
     let wk=0;
     for(let i=0;i<dim;i++){const dow=new Date(year,month-1,i+1).getDay();if(dow===1)wk=0;wk+=netHours(s._days[i]);const nd=i+1<dim?new Date(year,month-1,i+2).getDay():-1;if((nd===1||i===dim-1)&&wk>cfg.weekly)W.push({who:s.name,day:i+1,msg:"haftalık "+wk.toFixed(1)+"s net (>"+cfg.weekly+"s)"})}
   });
-  for(let i=0;i<dim;i++){const c={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[i]);if(sh&&c[sh.key]!=null)c[sh.key]++});if(c.S!==cfg.ns)W.push({who:"KADRO",day:i+1,msg:"Sabah "+c.S+"/"+cfg.ns});if(c.O!==cfg.no)W.push({who:"KADRO",day:i+1,msg:"Öğlen "+c.O+"/"+cfg.no});if(c.G!==cfg.ng)W.push({who:"KADRO",day:i+1,msg:"Gece "+c.G+"/"+cfg.ng})}
+  for(let i=0;i<dim;i++){cfg.shifts.forEach(sh=>{let c=0;const br={};staff.forEach(s=>{const x=shiftByVal(s._days[i]);if(x&&x.key===sh.key){c++;br[s.role||""]=(br[s.role||""]||0)+1}});if(c!==sh.need)W.push({who:"KADRO",day:i+1,msg:sh.label+" "+c+"/"+sh.need});const rn=sh.roleNeeds||{};for(const role in rn){if((br[role]||0)!==rn[role])W.push({who:"KADRO",day:i+1,msg:sh.label+" "+role+" "+(br[role]||0)+"/"+rn[role]})}})}
   return {W,cw};
 }
 function personStats(s){let sh={S:0,O:0,G:0},tot=0,net=0;const dim=daysInMonth(year,month);for(let i=0;i<dim;i++){const x=shiftByVal(s._days[i]);if(x){sh[x.key]++;tot++;net+=netHours(s._days[i])}}const rate=(s.rate!=null&&s.rate!=="")?+s.rate:+cfg.rate;return {sh,tot,net:Math.round(net*10)/10,cost:Math.round(net*rate)}}
 
 function render(){
+  ensureShifts();
   const {W,cw}=warnings();
   // nav
   if(readOnly&&view==="settings")view="week";
@@ -549,14 +557,14 @@ function renderWeek(cw){
     h+="</tr>";
   });
   h+="</tbody><tfoot><tr><td class='wkname'>Kadro</td>";
-  days.forEach(d=>{const c={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh)c[sh.key]++});
-    const chip=(k,t)=>"<span class='mini "+k+(c[k]===t?"":" bad")+"'>"+c[k]+"</span>";
-    h+="<td><div class='covmini'>"+chip("S",cfg.ns)+chip("O",cfg.no)+chip("G",cfg.ng)+"</div></td>"});
+  days.forEach(d=>{const c={};staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh)c[sh.key]=(c[sh.key]||0)+1});
+    let mh="";cfg.shifts.forEach(sh=>{const cn=c[sh.key]||0;mh+="<span class='mini "+sh.key+(cn===sh.need?"":" bad")+"'>"+cn+"</span>"});
+    h+="<td><div class='covmini'>"+mh+"</div></td>"});
   h+="</tr></tfoot></table></div>";
   document.getElementById("weekView").innerHTML=h;
 }
 function weekNav(d){const maxW=Math.ceil(daysInMonth(year,month)/7);selWeek=Math.min(Math.max(selWeek+d,0),maxW-1);selDay=selWeek*7;render()}
-function weekAgendaHtml(days,cw){const today=new Date();let h="<div class='agenda'>";days.forEach(d=>{const dow=new Date(year,month-1,d+1).getDay();const isT=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d+1;const cov={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh)cov[sh.key]++});const cc=(k,c,t)=>"<span class='cc "+k+(c===t?"":" bad")+"'>"+c+"</span>";h+="<div class='agday"+(isT?" today":"")+((dow===0||dow===6)?" wknd":"")+"'><div class='aghead'><div class='agdate'><b>"+(d+1)+"</b><span>"+TRDAYL[dow]+"</span></div><div class='agcov'>"+cc("S",cov.S,cfg.ns)+cc("O",cov.O,cfg.no)+cc("G",cov.G,cfg.ng)+"</div></div><div class='agbody'>";cfg.shifts.forEach(sh=>{const ppl=[];staff.forEach((s,si)=>{if(s._days[d]===sh.start+"-"+sh.end)ppl.push({s,si})});h+="<div class='agshift "+sh.key+"'><div class='agsl'>"+sh.label+"<small>"+sh.start.slice(0,5)+"–"+sh.end.slice(0,5)+"</small></div><div class='agppl'>";if(ppl.length)ppl.forEach(({s,si})=>{const wn=cw[si+"_"+d]?" warn":"";h+="<span class='agp"+wn+"' onclick='openEd("+si+","+d+")'>"+avHtml(s.name)+esc(s.name)+"</span>"});else h+="<span class='agempty'>— boş —</span>";h+="</div></div>"});h+="</div></div>"});h+="</div>";return h}
+function weekAgendaHtml(days,cw){const today=new Date();let h="<div class='agenda'>";days.forEach(d=>{const dow=new Date(year,month-1,d+1).getDay();const isT=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d+1;const cov={};staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh)cov[sh.key]=(cov[sh.key]||0)+1});let ccov="";cfg.shifts.forEach(sh=>{const cn=cov[sh.key]||0;ccov+="<span class='cc "+sh.key+(cn===sh.need?"":" bad")+"'>"+cn+"</span>"});h+="<div class='agday"+(isT?" today":"")+((dow===0||dow===6)?" wknd":"")+"'><div class='aghead'><div class='agdate'><b>"+(d+1)+"</b><span>"+TRDAYL[dow]+"</span></div><div class='agcov'>"+ccov+"</div></div><div class='agbody'>";cfg.shifts.forEach(sh=>{const ppl=[];staff.forEach((s,si)=>{if(s._days[d]===sh.start+"-"+sh.end)ppl.push({s,si})});h+="<div class='agshift "+sh.key+"'><div class='agsl'>"+sh.label+"<small>"+sh.start.slice(0,5)+"–"+sh.end.slice(0,5)+"</small></div><div class='agppl'>";if(ppl.length)ppl.forEach(({s,si})=>{const wn=cw[si+"_"+d]?" warn":"";h+="<span class='agp"+wn+"' onclick='openEd("+si+","+d+")'>"+avHtml(s.name)+esc(s.name)+"</span>"});else h+="<span class='agempty'>— boş —</span>";h+="</div></div>"});h+="</div></div>"});h+="</div>";return h}
 
 /* GÜN */
 function renderDay(cw){
@@ -565,11 +573,10 @@ function renderDay(cw){
   let h="<div class='navrow'><button onclick='dayNav(-1)'>&#8249;</button><button onclick='dayNav(1)'>&#8250;</button><div class='lbl'>"+(selDay+1)+" "+monTitle()+"<small>"+TRDAYL[dow]+(isToday?" · bugün":"")+"</small></div>";
   if(!isToday&&today.getFullYear()===year&&today.getMonth()+1===month)h+="<button class='today-pill' onclick='goToday()'>Bugün</button>";
   h+="</div><div class='dgrid'>";
-  const targets={S:cfg.ns,O:cfg.no,G:cfg.ng};
   cfg.shifts.forEach(sh=>{
     const list=[];staff.forEach((s,si)=>{if(s._days[selDay]===sh.start+"-"+sh.end)list.push({s,si})});
-    const bad=list.length!==targets[sh.key];
-    h+="<div class='scard "+sh.key+(bad?" warn":"")+"'><div class='shead'><div class='st'><span class='nm'>"+sh.label+"</span><span class='time'>"+sh.start+" – "+sh.end+"</span></div><div class='cnt'>"+list.length+"/"+targets[sh.key]+"</div></div><div class='plist'>";
+    const bad=list.length!==sh.need;
+    h+="<div class='scard "+sh.key+(bad?" warn":"")+"'><div class='shead'><div class='st'><span class='nm'>"+sh.label+"</span><span class='time'>"+sh.start+" – "+sh.end+"</span></div><div class='cnt'>"+list.length+"/"+sh.need+"</div></div><div class='plist'>";
     if(list.length)list.forEach(({s,si})=>{const w=cw[si+"_"+selDay]?"<span class='wtag'>&#9650;</span>":"";h+="<div class='prow' onclick='openEd("+si+","+selDay+")'>"+avHtml(s.name)+esc(s.name)+w+"</div>"});
     else h+="<div class='prow empty'>— kimse atanmadı —</div>";
     h+="</div></div>";
@@ -611,7 +618,7 @@ function renderMonth(cw){
     for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("m-"+sh.key):(v==="YOK"?"m-yok":(v==="İZİN"?"m-off":""));const wn=cw[si+"_"+d]?" warn":"";const disp=sh?(sh.start.slice(0,5)):(v==="YOK"?"×":(v==="İZİN"?"İ":""));h+="<td class='mcell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
     h+="<td class='sumcol sc-net'>"+p.net+"</td><td class='sumcol sc-vard'>"+p.tot+"</td></tr>"});
   h+="</tbody><tfoot>";
-  [["Sabah",cfg.ns,"S"],["Öğlen",cfg.no,"O"],["Gece",cfg.ng,"G"]].forEach(([lbl,target,k])=>{h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
+  cfg.shifts.forEach(sh=>{const lbl=sh.label,target=sh.need,k=sh.key;h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
     for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});const cc=c===target?"cov-exact":(c<target?"cov-under":"cov-over");h+="<td><span class='covchip "+cc+"'>"+c+"</span></td>"}
     h+="<td class='sumcol sc-net'></td><td class='sumcol sc-vard'></td></tr>"});
   h+="</tfoot>";
@@ -620,19 +627,24 @@ function renderMonth(cw){
 
 /* AYARLAR */
 function renderSettings(){
-  const h="<div class='setgrid'><div class='setcard'><h3>Vardiya Kuralları</h3>"+
-    "<div class='cfg'>"+
-    cfgIn("cfgNS","Sabah kişi",cfg.ns)+cfgIn("cfgNO","Öğlen kişi",cfg.no)+cfgIn("cfgNG","Gece kişi",cfg.ng)+
+  const h="<div class='setgrid'>"+
+    "<div class='setcard' style='grid-column:1/-1'><h3>Vardiya Tanımları</h3><div style='overflow-x:auto'>"+shiftTableHtml()+"</div></div>"+
+    "<div class='setcard'><h3>Genel Kurallar</h3><div class='cfg'>"+
     cfgIn("cfgBreak","Mola (dk)",cfg.breakMin)+cfgIn("cfgRest","Min. dinlenme (s)",cfg.rest)+cfgIn("cfgStreak","Max ardışık gün",cfg.streak)+
     cfgIn("cfgWeekly","Haftalık max (s)",cfg.weekly)+cfgIn("cfgRate","Saat ücreti €",cfg.rate,"0.5")+
-    "</div><div style='margin-top:14px'><button class='primary' onclick='saveCfg()'>Ayarları Kaydet</button></div></div>"+
+    "</div><div style='margin-top:14px'><button class='primary' onclick='saveCfg()'>Kuralları Kaydet</button></div></div>"+
     "<div class='setcard'><h3>Personel <button style='float:right' onclick='addStaff()'>+ Ekle</button></h3><div style='overflow-x:auto'><table class='stafftbl' id='staffTbl'></table></div>"+
-    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Ücret boşsa genel ücret kullanılır.</div></div>"+cloudCard()+"</div>";
+    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Rol atarsan üstteki vardiya tablosunda rol-bazlı kadro belirleyebilirsin.</div></div>"+cloudCard()+"</div>";
   document.getElementById("settingsView").innerHTML=h;renderStaffTbl();
 }
+function ensureShifts(){if(!cfg.shifts||!cfg.shifts.length)cfg.shifts=JSON.parse(JSON.stringify(DEFAULT_CFG.shifts));cfg.shifts.forEach(sh=>{if(sh.need==null)sh.need=sh.key==="S"?(cfg.ns!=null?cfg.ns:6):sh.key==="O"?(cfg.no!=null?cfg.no:6):sh.key==="G"?(cfg.ng!=null?cfg.ng:3):0;if(!sh.roleNeeds)sh.roleNeeds={}})}
+function uniqueRoles(){const set=[];staff.forEach(s=>{const r=(s.role||"").trim();if(r&&set.indexOf(r)<0)set.push(r)});return set}
+function shiftTableHtml(){const roles=uniqueRoles();const dc={S:"sab",O:"ogl",G:"gec"};let h="<table class='shtbl'><tr><th>Vardiya</th><th>Başl.</th><th>Bitiş</th><th>Kişi</th>"+roles.map(r=>"<th>"+esc(r)+"</th>").join("")+"</tr>";cfg.shifts.forEach((sh,i)=>{h+="<tr><td><span class='shdot' style='background:var(--"+(dc[sh.key]||"off")+"-ac)'></span><input type='text' value='"+esc(sh.label)+"' onchange='setShift("+i+",\"label\",this.value)' style='width:86px'></td><td><input type='time' value='"+sh.start+"' onchange='setShift("+i+",\"start\",this.value)'></td><td><input type='time' value='"+sh.end+"' onchange='setShift("+i+",\"end\",this.value)'></td><td><input type='number' min='0' value='"+sh.need+"' onchange='setShift("+i+",\"need\",+this.value)' style='width:54px'></td>";roles.forEach(r=>{h+="<td><input type='number' min='0' value='"+((sh.roleNeeds&&sh.roleNeeds[r])||0)+"' onchange='setRoleNeed("+i+",\""+esc(r)+"\",+this.value)' style='width:50px'></td>"});h+="</tr>"});h+="</table>";h+=roles.length?"<div style='font-size:11px;color:var(--ink2);margin-top:9px'>Rol sütunları: her vardiyada o rolden kaç kişi olmalı; kalan yerler herkesten doldurulur. Saat değiştirirsen planı yeniden üret.</div>":"<div style='font-size:11px;color:var(--ink2);margin-top:9px'>Personele rol atarsan burada rol-bazlı kadro sütunları çıkar. Saat değiştirdikten sonra planı yeniden üret.</div>";return h}
+function setShift(i,f,v){cfg.shifts[i][f]=v;persist();render()}
+function setRoleNeed(i,role,v){cfg.shifts[i].roleNeeds=cfg.shifts[i].roleNeeds||{};if(v>0)cfg.shifts[i].roleNeeds[role]=v;else delete cfg.shifts[i].roleNeeds[role];persist();render()}
 function cfgIn(id,lbl,val,step){return "<div><label>"+lbl+"</label><input type='number' id='"+id+"' min='0'"+(step?" step='"+step+"'":"")+" value='"+val+"'></div>"}
 function syncCfgInputs(){/* değerler renderSettings'te set ediliyor */}
-function saveCfg(){const g=id=>+document.getElementById(id).value;cfg.ns=g("cfgNS");cfg.no=g("cfgNO");cfg.ng=g("cfgNG");cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");persist();render()}
+function saveCfg(){const g=id=>+document.getElementById(id).value;cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");persist();render()}
 function renderStaffTbl(){const el=document.getElementById("staffTbl");if(!el)return;let h="<tr><th>Personel</th><th>Rol</th><th>Telefon</th><th>Gece?</th><th>Ücret €</th><th></th></tr>";staff.forEach((s,i)=>{h+="<tr><td><div class='nmc'>"+avHtml(s.name)+"<input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></div></td><td><input type='text' style='width:94px' value='"+esc(s.role||"")+"' placeholder='—' onchange='setRole("+i+",this.value)'></td><td><input type='text' style='width:118px' value='"+esc(s.phone||"")+"' placeholder='+49…' onchange='setPhone("+i+",this.value)'></td><td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td><td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td><td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});el.innerHTML=h}
 function setName(i,v){staff[i].name=v.trim().toUpperCase();store.staff=cleanStaff();persist();render()}
 function setNight(i,ch){staff[i].noNight=!ch;store.staff=cleanStaff();persist()}
@@ -664,7 +676,7 @@ function exportXlsx(){const dim=daysInMonth(year,month);const NC=1+dim+3;
   const bStart=rows.length;
   staff.forEach(s=>{const p=personStats(s);const line=[s.name];for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);line.push(sh?sh.start+"-"+sh.end:(v==="YOK"?"Müsait değil":(v==="İZİN"?"İZİN":"")))}line.push(p.tot,p.net,p.cost);rows.push(line)});
   const cStart=rows.length;
-  [["Sabah","S",cfg.ns],["Öğlen","O",cfg.no],["Gece","G",cfg.ng]].forEach(([lbl,k,t])=>{const line=[lbl+" ("+t+")"];for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});line.push(c)}line.push("","","");rows.push(line)});
+  cfg.shifts.forEach(sh=>{const lbl=sh.label,k=sh.key,t=sh.need;const line=[lbl+" ("+t+")"];for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});line.push(c)}line.push("","","");rows.push(line)});
   const ws=XLSX.utils.aoa_to_sheet(rows);
   const cols=[{wch:16}];for(let d=0;d<dim;d++)cols.push({wch:6.5});cols.push({wch:7},{wch:7},{wch:7});ws["!cols"]=cols;
   const rh=[{hpt:26},{hpt:30}];for(let i=bStart;i<rows.length;i++)rh.push({hpt:17});ws["!rows"]=rh;
@@ -682,8 +694,8 @@ function exportXlsx(){const dim=daysInMonth(year,month);const NC=1+dim+3;
       if(key==="S"){bg=C.sbb;tx=C.sbt;bold=true}else if(key==="O"){bg=C.ogb;tx=C.ogt;bold=true}else if(key==="G"){bg=C.geb;tx=C.get;bold=true}else if(v==="İZİN"||v==="YOK"){bg=C.offb;tx=C.offt}
       set(r,c,{fill:{patternType:"solid",fgColor:{rgb:bg}},font:{bold:bold,sz:8.5,color:{rgb:tx},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})}
     for(let c=1+dim;c<NC;c++)set(r,c,{fill:{patternType:"solid",fgColor:{rgb:C.sum}},font:{bold:true,sz:10,color:{rgb:C.ink},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})});
-  const cK=["S","O","G"],cT=[cfg.ns,cfg.no,cfg.ng];
-  for(let ci=0;ci<3;ci++){const r=cStart+ci,key=cK[ci],target=cT[ci];
+  const cK=cfg.shifts.map(s=>s.key),cT=cfg.shifts.map(s=>s.need);
+  for(let ci=0;ci<cfg.shifts.length;ci++){const r=cStart+ci,key=cK[ci],target=cT[ci];
     set(r,0,{fill:{patternType:"solid",fgColor:{rgb:C.sum}},font:{bold:true,sz:9,color:{rgb:C.ink},name:"Calibri"},alignment:{horizontal:"left",vertical:"center",indent:1},border:bd});
     for(let d=0;d<dim;d++){const c=1+d;const ref=XLSX.utils.encode_cell({r,c});const cv=ws[ref]?ws[ref].v:0;const under=cv!=target;const bg=key==="S"?C.sbb:key==="O"?C.ogb:C.geb;const tx=key==="S"?C.sbt:key==="O"?C.ogt:C.get;
       set(r,c,{fill:{patternType:"solid",fgColor:{rgb:under?C.wnb:bg}},font:{bold:true,sz:9,color:{rgb:under?C.warn:tx},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})}
