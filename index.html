@@ -296,7 +296,13 @@ td.wkcell{position:relative}
 .pnav{width:36px;height:36px;justify-content:center;padding:0;border-radius:10px}
 .pselect{font-family:inherit;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);cursor:pointer;box-shadow:var(--shadow);min-width:150px}
 .pselect:focus{outline:none;border-color:var(--accent)}
-@media(max-width:920px){.pctrl{margin-left:0;width:100%}.pselect{flex:1;min-width:0}}
+@media(max-width:920px){
+  .phead{gap:11px}
+  .pctrl{margin-left:0;width:100%;flex-wrap:wrap;gap:8px}
+  .pselect{flex:1 1 100%;order:-1;min-width:0;padding:13px 14px;font-size:16px}
+  .pnav{flex:0 0 auto;width:44px;height:44px;font-size:17px}
+  .pctrl .wa-btn{width:auto;flex:1;justify-content:center;padding:13px}
+}
 </style>
 </head>
 <body>
