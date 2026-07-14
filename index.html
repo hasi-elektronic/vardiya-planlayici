@@ -303,6 +303,27 @@ td.wkcell{position:relative}
   .pnav{flex:0 0 auto;width:44px;height:44px;font-size:17px}
   .pctrl .wa-btn{width:auto;flex:1;justify-content:center;padding:13px}
 }
+.fsbtn{white-space:nowrap}
+body.fs-on{overflow:hidden}
+body.fs-on .sidebar,body.fs-on .topbar,body.fs-on .bottomnav,body.fs-on #alertBar,body.fs-on #statbar{display:none!important}
+body.fs-on .content{padding:0!important;max-width:none}
+#weekView.wk-fs{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;padding:8px}
+#weekView.wk-fs .navrow{margin:2px 4px 8px;flex:none}
+#weekView.wk-fs .wkcard{flex:1;min-height:0;border-radius:12px}
+@media(max-width:920px){
+  #weekView.wk-fs table.wk{min-width:0}
+  #weekView.wk-fs .wk .wkname{min-width:100px}
+  #weekView.wk-fs .empcell{padding:6px 6px 6px 8px;gap:7px}
+  #weekView.wk-fs .empcell .av{width:26px;height:26px;font-size:10px}
+  #weekView.wk-fs .empmeta b{font-size:11px}
+  #weekView.wk-fs .empmeta span{display:none}
+  #weekView.wk-fs .shift{margin:3px;padding:5px 6px}
+  #weekView.wk-fs .shift .t{font-size:10px}
+  #weekView.wk-fs .shift .l{display:none}
+  #weekView.wk-fs .offblock,#weekView.wk-fs .yokblock,#weekView.wk-fs .emptyblock{margin:3px;padding:6px 3px;font-size:9px}
+  #weekView.wk-fs .wk th{padding:8px 2px}
+  #weekView.wk-fs .wk td{height:52px}
+}
 </style>
 </head>
 <body>
@@ -370,7 +391,7 @@ const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
 
 let store,key,year,month,staff,cfg;
-let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false;
+let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false,weekFS=false;
 let mem={};
 function sGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
 function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
@@ -491,7 +512,7 @@ function renderWeek(cw){
   const dim=daysInMonth(year,month);const maxW=Math.ceil(dim/7);if(selWeek>=maxW)selWeek=maxW-1;if(selWeek<0)selWeek=0;
   const start=selWeek*7;const days=[];for(let d=start;d<Math.min(start+7,dim);d++)days.push(d);
   const f=days[0]+1,l=days[days.length-1]+1;const today=new Date();
-  let h="<div class='navrow'><button onclick='weekNav(-1)'>&#8249;</button><button onclick='weekNav(1)'>&#8250;</button><div class='lbl'>Hafta "+(selWeek+1)+"<small>"+f+"–"+l+" "+monTitle()+"</small></div></div>";
+  let h="<div class='navrow'><button onclick='weekNav(-1)'>&#8249;</button><button onclick='weekNav(1)'>&#8250;</button><div class='lbl'>Hafta "+(selWeek+1)+"<small>"+f+"–"+l+" "+monTitle()+"</small></div><button class='fsbtn' onclick='toggleWeekFS()' style='margin-left:auto'>"+(weekFS?"&#10005; Kapat":"&#9974; Tam ekran")+"</button></div>";
   h+="<div class='wkcard'><table class='wk'><thead><tr><th class='wkname'></th>";
   days.forEach(d=>{const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const isT=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d+1;h+="<th class='"+wk+"'><span class='wd'>"+TRDAY[dow]+"</span><span class='wn"+(isT?" today":"")+"'>"+(d+1)+"</span></th>"});
   h+="</tr></thead><tbody>";
@@ -515,6 +536,8 @@ function renderWeek(cw){
   document.getElementById("weekView").innerHTML=h;
 }
 function weekNav(d){const maxW=Math.ceil(daysInMonth(year,month)/7);selWeek=Math.min(Math.max(selWeek+d,0),maxW-1);selDay=selWeek*7;render()}
+function toggleWeekFS(){weekFS=!weekFS;document.body.classList.toggle("fs-on",weekFS);const wv=document.getElementById("weekView");wv.classList.toggle("wk-fs",weekFS);try{if(weekFS){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{})}else{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})}}catch(e){}render()}
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&weekFS){weekFS=false;document.body.classList.remove("fs-on");const wv=document.getElementById("weekView");if(wv)wv.classList.remove("wk-fs");render()}});
 
 /* GÜN */
 function renderDay(cw){
