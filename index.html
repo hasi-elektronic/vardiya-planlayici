@@ -303,27 +303,31 @@ td.wkcell{position:relative}
   .pnav{flex:0 0 auto;width:44px;height:44px;font-size:17px}
   .pctrl .wa-btn{width:auto;flex:1;justify-content:center;padding:13px}
 }
-.fsbtn{white-space:nowrap}
-body.fs-on{overflow:hidden}
-body.fs-on .sidebar,body.fs-on .topbar,body.fs-on .bottomnav,body.fs-on #alertBar,body.fs-on #statbar{display:none!important}
-body.fs-on .content{padding:0!important;max-width:none}
-#weekView.wk-fs{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;padding:8px}
-#weekView.wk-fs .navrow{margin:2px 4px 8px;flex:none}
-#weekView.wk-fs .wkcard{flex:1;min-height:0;border-radius:12px}
-@media(max-width:920px){
-  #weekView.wk-fs table.wk{min-width:0}
-  #weekView.wk-fs .wk .wkname{min-width:100px}
-  #weekView.wk-fs .empcell{padding:6px 6px 6px 8px;gap:7px}
-  #weekView.wk-fs .empcell .av{width:26px;height:26px;font-size:10px}
-  #weekView.wk-fs .empmeta b{font-size:11px}
-  #weekView.wk-fs .empmeta span{display:none}
-  #weekView.wk-fs .shift{margin:3px;padding:5px 6px}
-  #weekView.wk-fs .shift .t{font-size:10px}
-  #weekView.wk-fs .shift .l{display:none}
-  #weekView.wk-fs .offblock,#weekView.wk-fs .yokblock,#weekView.wk-fs .emptyblock{margin:3px;padding:6px 3px;font-size:9px}
-  #weekView.wk-fs .wk th{padding:8px 2px}
-  #weekView.wk-fs .wk td{height:52px}
-}
+.agenda{display:flex;flex-direction:column;gap:11px}
+.agday{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.agday.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.aghead{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line2)}
+.agday.wknd .aghead{background:var(--wknd)}
+.agdate{display:flex;align-items:baseline;gap:9px}
+.agdate b{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:800;line-height:1}
+.agdate span{font-size:11px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.agday.today .agdate b{color:var(--accent)}
+.agcov{display:flex;gap:4px}
+.agcov .cc{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:10.5px;padding:2px 8px;border-radius:6px}
+.cc.S{background:var(--sab-bg);color:var(--sab-tx)}.cc.O{background:var(--ogl-bg);color:var(--ogl-tx)}.cc.G{background:var(--gec-bg);color:var(--gec-tx)}
+.cc.bad{box-shadow:0 0 0 1.5px var(--warn)}
+.agbody{padding:4px 12px 10px}
+.agshift{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.agshift:last-child{border-bottom:none}
+.agsl{flex:0 0 66px;font-size:11px;font-weight:800;padding-top:3px}
+.agshift.S .agsl{color:var(--sab-tx)}.agshift.O .agsl{color:var(--ogl-tx)}.agshift.G .agsl{color:var(--gec-tx)}
+.agsl small{display:block;font-family:"JetBrains Mono",monospace;font-weight:600;font-size:9.5px;color:var(--ink3);margin-top:2px}
+.agppl{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:0}
+.agp{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 3px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);font-size:12px;font-weight:600;cursor:pointer}
+.agp:active{background:var(--line2)}
+.agp .av{width:22px;height:22px;font-size:9px}
+.agp.warn{box-shadow:inset 0 0 0 1.5px var(--warn)}
+.agempty{color:var(--ink3);font-size:12px;padding:4px 2px}
 </style>
 </head>
 <body>
@@ -391,7 +395,7 @@ const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
 
 let store,key,year,month,staff,cfg;
-let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false,weekFS=false;
+let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false;
 let mem={};
 function sGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
 function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
@@ -512,7 +516,8 @@ function renderWeek(cw){
   const dim=daysInMonth(year,month);const maxW=Math.ceil(dim/7);if(selWeek>=maxW)selWeek=maxW-1;if(selWeek<0)selWeek=0;
   const start=selWeek*7;const days=[];for(let d=start;d<Math.min(start+7,dim);d++)days.push(d);
   const f=days[0]+1,l=days[days.length-1]+1;const today=new Date();
-  let h="<div class='navrow'><button onclick='weekNav(-1)'>&#8249;</button><button onclick='weekNav(1)'>&#8250;</button><div class='lbl'>Hafta "+(selWeek+1)+"<small>"+f+"–"+l+" "+monTitle()+"</small></div><button class='fsbtn' onclick='toggleWeekFS()' style='margin-left:auto'>"+(weekFS?"&#10005; Kapat":"&#9974; Tam ekran")+"</button></div>";
+  let h="<div class='navrow'><button onclick='weekNav(-1)'>&#8249;</button><button onclick='weekNav(1)'>&#8250;</button><div class='lbl'>Hafta "+(selWeek+1)+"<small>"+f+"–"+l+" "+monTitle()+"</small></div></div>";
+  if(window.innerWidth<=760){document.getElementById("weekView").innerHTML=h+weekAgendaHtml(days,cw);return}
   h+="<div class='wkcard'><table class='wk'><thead><tr><th class='wkname'></th>";
   days.forEach(d=>{const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const isT=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d+1;h+="<th class='"+wk+"'><span class='wd'>"+TRDAY[dow]+"</span><span class='wn"+(isT?" today":"")+"'>"+(d+1)+"</span></th>"});
   h+="</tr></thead><tbody>";
@@ -536,8 +541,7 @@ function renderWeek(cw){
   document.getElementById("weekView").innerHTML=h;
 }
 function weekNav(d){const maxW=Math.ceil(daysInMonth(year,month)/7);selWeek=Math.min(Math.max(selWeek+d,0),maxW-1);selDay=selWeek*7;render()}
-function toggleWeekFS(){weekFS=!weekFS;document.body.classList.toggle("fs-on",weekFS);const wv=document.getElementById("weekView");wv.classList.toggle("wk-fs",weekFS);try{if(weekFS){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{})}else{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})}}catch(e){}render()}
-document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&weekFS){weekFS=false;document.body.classList.remove("fs-on");const wv=document.getElementById("weekView");if(wv)wv.classList.remove("wk-fs");render()}});
+function weekAgendaHtml(days,cw){const today=new Date();let h="<div class='agenda'>";days.forEach(d=>{const dow=new Date(year,month-1,d+1).getDay();const isT=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d+1;const cov={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh)cov[sh.key]++});const cc=(k,c,t)=>"<span class='cc "+k+(c===t?"":" bad")+"'>"+c+"</span>";h+="<div class='agday"+(isT?" today":"")+((dow===0||dow===6)?" wknd":"")+"'><div class='aghead'><div class='agdate'><b>"+(d+1)+"</b><span>"+TRDAYL[dow]+"</span></div><div class='agcov'>"+cc("S",cov.S,cfg.ns)+cc("O",cov.O,cfg.no)+cc("G",cov.G,cfg.ng)+"</div></div><div class='agbody'>";cfg.shifts.forEach(sh=>{const ppl=[];staff.forEach((s,si)=>{if(s._days[d]===sh.start+"-"+sh.end)ppl.push({s,si})});h+="<div class='agshift "+sh.key+"'><div class='agsl'>"+sh.label+"<small>"+sh.start.slice(0,5)+"–"+sh.end.slice(0,5)+"</small></div><div class='agppl'>";if(ppl.length)ppl.forEach(({s,si})=>{const wn=cw[si+"_"+d]?" warn":"";h+="<span class='agp"+wn+"' onclick='openEd("+si+","+d+")'>"+avHtml(s.name)+esc(s.name)+"</span>"});else h+="<span class='agempty'>— boş —</span>";h+="</div></div>"});h+="</div></div>"});h+="</div>";return h}
 
 /* GÜN */
 function renderDay(cw){
@@ -636,6 +640,7 @@ function toggleLock(){const s=staff[curSi];s._lock=s._lock||[];const idx=s._lock
 function setVal(v){staff[curSi]._days[curDi]=v;persist();render();closeEd()}
 function closeEd(){document.getElementById("overlay").classList.remove("on")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeEd()});
+let _rz;window.addEventListener("resize",()=>{clearTimeout(_rz);_rz=setTimeout(()=>{if(view==="week")render()},200)});
 
 function exportXlsx(){const dim=daysInMonth(year,month);
   const head=["Personel"];for(let d=1;d<=dim;d++)head.push(d+" "+TRDAY[new Date(year,month-1,d).getDay()]);head.push("Vardiya","Net Saat","€");
