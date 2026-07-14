@@ -328,6 +328,11 @@ td.wkcell{position:relative}
 .agp .av{width:22px;height:22px;font-size:9px}
 .agp.warn{box-shadow:inset 0 0 0 1.5px var(--warn)}
 .agempty{color:var(--ink3);font-size:12px;padding:4px 2px}
+.robanner{background:var(--accent);color:#fff;border-radius:12px;padding:11px 15px;margin-bottom:16px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+body.ro .actions{display:none!important}
+.cloudcard .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.codebox{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;word-break:break-all;user-select:all;margin-top:7px}
+.cloud-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px}
 </style>
 </head>
 <body>
@@ -360,6 +365,7 @@ td.wkcell{position:relative}
       </div>
     </div>
     <div class="content">
+      <div id="roBanner"></div>
       <div id="alertBar"></div>
       <div class="bar" id="statbar"></div>
       <div id="weekView" class="viewpane" style="display:none"></div>
@@ -396,6 +402,9 @@ const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
 
 let store,key,year,month,staff,cfg;
 let view="week",selDay=0,selWeek=0,selPerson=0,alertOpen=false;
+const API="https://vardiya-api.hguencavdi.workers.dev";
+let cloud=null;try{cloud=JSON.parse(sGet("vardiya_cloud")||"null")}catch(e){}
+let readOnly=false,cloudBusy=false,_cloudT=null;
 let mem={};
 function sGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
 function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
@@ -410,15 +419,18 @@ function avatarFor(name){const p=(name||"").trim().split(/\s+/);const ini=(p[0]?
 function avHtml(name,cls){const a=avatarFor(name);return "<div class='av "+(cls||"")+"' style='background:"+a.bg+"'>"+esc(a.ini)+"</div>"}
 
 function load(){
+  const wid=new URLSearchParams(location.search).get("w");
+  if(wid){loadPublic(wid);return}
   try{store=JSON.parse(sGet("vardiya_adv"))||{}}catch(e){store={}}
   cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):JSON.parse(JSON.stringify(DEFAULT_CFG));
   if(!store.staff) store.staff=SEED_NAMES.map(n=>({name:n,noNight:false,rate:null}));
   year=2026;month=7;
   const sv=sGet("vardiya_view");view=(["week","day","person","month","settings"].includes(sv))?sv:(window.innerWidth<720?"day":"week");
   initTheme();setMonth(year,month,true);
+  if(cloud&&cloud.id)cloudPull(false);
 }
 function cleanStaff(){return staff.map(({_days,_lock,...r})=>r)}
-function persist(){store.cfg=cfg;store.staff=cleanStaff();store.months=store.months||{};store.months[key]=plan();store.locks=store.locks||{};const lk={};staff.forEach(s=>{if(s._lock&&s._lock.length)lk[s.name]=s._lock.slice()});store.locks[key]=lk;sSet("vardiya_adv",JSON.stringify(store));flashSaved()}
+function persist(){if(readOnly)return;store.cfg=cfg;store.staff=cleanStaff();store.months=store.months||{};store.months[key]=plan();store.locks=store.locks||{};const lk={};staff.forEach(s=>{if(s._lock&&s._lock.length)lk[s.name]=s._lock.slice()});store.locks[key]=lk;sSet("vardiya_adv",JSON.stringify(store));flashSaved();if(cloud&&cloud.id)cloudPushDebounced()}
 function plan(){const o={};staff.forEach(s=>o[s.name]=s._days);return o}
 function daysInMonth(y,m){return new Date(y,m,0).getDate()}
 function monTitle(){return MONTHT[month-1]}
@@ -481,9 +493,12 @@ function personStats(s){let sh={S:0,O:0,G:0},tot=0,net=0;const dim=daysInMonth(y
 function render(){
   const {W,cw}=warnings();
   // nav
-  document.getElementById("sideNav").innerHTML=NAV.map(n=>"<button class='navitem"+(view===n.v?" on":"")+"' onclick='setView(\""+n.v+"\")'>"+svg(n.i)+"<span>"+n.l+"</span></button>").join("");
-  document.getElementById("bottomNav").innerHTML=NAV.map(n=>"<button class='bnitem"+(view===n.v?" on":"")+"' onclick='setView(\""+n.v+"\")'>"+svg(n.i)+"<span>"+n.l+"</span></button>").join("");
-  document.getElementById("ptitle").textContent=NAV.find(n=>n.v===view).l;
+  if(readOnly&&view==="settings")view="week";
+  const NV=readOnly?NAV.filter(n=>n.v!=="settings"):NAV;
+  document.getElementById("sideNav").innerHTML=NV.map(n=>"<button class='navitem"+(view===n.v?" on":"")+"' onclick='setView(\""+n.v+"\")'>"+svg(n.i)+"<span>"+n.l+"</span></button>").join("");
+  document.getElementById("bottomNav").innerHTML=NV.map(n=>"<button class='bnitem"+(view===n.v?" on":"")+"' onclick='setView(\""+n.v+"\")'>"+svg(n.i)+"<span>"+n.l+"</span></button>").join("");
+  document.getElementById("ptitle").textContent=(NAV.find(n=>n.v===view)||{l:"Program"}).l;
+  document.getElementById("roBanner").innerHTML=readOnly?"<div class='robanner'>&#128065; Yayınlanan program \u00b7 salt okunur</div>":"";
   // stats + alert (planlama görünümlerinde)
   const showStats=view!=="settings";
   document.getElementById("statbar").style.display=showStats?"":"none";
@@ -612,7 +627,7 @@ function renderSettings(){
     cfgIn("cfgWeekly","Haftalık max (s)",cfg.weekly)+cfgIn("cfgRate","Saat ücreti €",cfg.rate,"0.5")+
     "</div><div style='margin-top:14px'><button class='primary' onclick='saveCfg()'>Ayarları Kaydet</button></div></div>"+
     "<div class='setcard'><h3>Personel <button style='float:right' onclick='addStaff()'>+ Ekle</button></h3><div style='overflow-x:auto'><table class='stafftbl' id='staffTbl'></table></div>"+
-    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Ücret boşsa genel ücret kullanılır.</div></div></div>";
+    "<div style='font-size:11px;color:var(--ink2);margin-top:10px'>Gece ✓ kapalı = o kişi gece vardiyasına atanmaz. Ücret boşsa genel ücret kullanılır.</div></div>"+cloudCard()+"</div>";
   document.getElementById("settingsView").innerHTML=h;renderStaffTbl();
 }
 function cfgIn(id,lbl,val,step){return "<div><label>"+lbl+"</label><input type='number' id='"+id+"' min='0'"+(step?" step='"+step+"'":"")+" value='"+val+"'></div>"}
@@ -629,7 +644,7 @@ function delStaff(i){if(!confirm(staff[i].name+" silinsin mi?"))return;staff.spl
 
 let curSi,curDi;
 function cellLabel(v){const sh=shiftByVal(v);if(sh)return sh.start+"-"+sh.end+" ("+sh.label+")";if(v==="YOK")return "müsait değil";if(v==="İZİN")return "izin";return "boş"}
-function openEd(si,di){curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();const locked=(s._lock||[]).indexOf(di)>=0;
+function openEd(si,di){if(readOnly)return;curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();const locked=(s._lock||[]).indexOf(di)>=0;
   let h="<div class='ehead'>"+avHtml(s.name)+"<div><h4>"+esc(s.name)+(s.role?" <span class='roletag' style='background:"+roleColor(s.role)+"'>"+esc(s.role)+"</span>":"")+"</h4><div class='who'>"+(di+1)+" "+monTitle()+" · "+TRDAYL[dow]+" · "+cellLabel(s._days[di])+"</div></div></div><div class='chips'>";
   cfg.shifts.forEach(sh=>{h+="<div class='chip "+sh.key+"' onclick='setVal(\""+sh.start+"-"+sh.end+"\")'><small>"+sh.label+"</small>"+sh.start+"-"+sh.end+"</div>"});
   h+="</div><div class='chips' style='margin-top:9px'><div class='chip off' onclick='setVal(\"İZİN\")'>İZİN</div><div class='chip yok' onclick='setVal(\"YOK\")'>Müsait Değil</div><div class='chip' onclick='setVal(\"\")'>Temizle</div></div>";
@@ -688,6 +703,19 @@ function saveTemplate(){let n=prompt("Şablon adı:");if(!n)return;n=n.replace(/
 function applyTemplate(n){const t=(store.templates||{})[n];if(!t)return;if(!confirm("'"+n+"' şablonu bu aya uygulansın mı? Mevcut plan değişir."))return;const dim=daysInMonth(year,month);staff.forEach(s=>{const d=(t[s.name]||[]).slice(0,dim);while(d.length<dim)d.push("");s._days=d});persist();render();closeMenu()}
 function deleteTemplate(n){if(!confirm("'"+n+"' şablonu silinsin mi?"))return;delete (store.templates||{})[n];sSet("vardiya_adv",JSON.stringify(store));renderMenu()}
 document.addEventListener("click",()=>closeMenu());
+
+function saveCloud(){sSet("vardiya_cloud",cloud?JSON.stringify(cloud):"null")}
+function cloudPushDebounced(){clearTimeout(_cloudT);_cloudT=setTimeout(cloudPushNow,1500)}
+async function cloudPushNow(){if(!cloud||!cloud.id)return;try{const r=await fetch(API+"/api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:cloud.id,token:cloud.token,data:store})}).then(x=>x.json());if(r.ok){cloud.pushedAt=r.updated_at;saveCloud();const t=document.getElementById("savedTxt");if(t){t.textContent="buluta kaydedildi";clearTimeout(savedT);savedT=setTimeout(()=>t.textContent="kayıtlı",1400)}}}catch(e){}}
+async function cloudPull(force){if(!cloud||!cloud.id)return;try{const r=await fetch(API+"/api/load?id="+encodeURIComponent(cloud.id)+"&token="+encodeURIComponent(cloud.token)).then(x=>x.json());if(r.ok&&(force||!cloud.pushedAt||r.updated_at>cloud.pushedAt)){store=r.data||store;cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):cfg;if(!store.staff)store.staff=[];cloud.pushedAt=r.updated_at;saveCloud();sSet("vardiya_adv",JSON.stringify(store));setMonth(year,month,false)}}catch(e){}}
+async function cloudConnect(){if(cloudBusy)return;cloudBusy=true;render();try{const r=await fetch(API+"/api/create",{method:"POST"}).then(x=>x.json());if(r.ok){cloud={id:r.id,token:r.token,published:0,pushedAt:0};saveCloud();await cloudPushNow();alert("Buluta baglandi \u2713\n\nCihaz kodu (baska cihazda 'Cihaz Bagla' ile gir):\n"+r.id+":"+r.token)}else alert("Baglanamadi.")}catch(e){alert("Baglanamadi: "+e)}cloudBusy=false;render()}
+function cloudLinkPrompt(){const c=prompt("Cihaz kodu (id:token):");if(!c)return;const i=c.indexOf(":");if(i<1){alert("Gecersiz kod.");return}cloud={id:c.slice(0,i).trim(),token:c.slice(i+1).trim(),published:0,pushedAt:0};saveCloud();cloudPull(true).then(()=>{alert("Baglandi, veriler indirildi.");render()})}
+function cloudDisconnect(){if(!confirm("Bulut baglantisi kaldirilsin mi? (Yerel veri kalir)"))return;cloud=null;saveCloud();render()}
+async function cloudPublishToggle(){if(!cloud||!cloud.id){alert("Once buluta baglan.");return}const np=cloud.published?0:1;try{await cloudPushNow();const r=await fetch(API+"/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:cloud.id,token:cloud.token,published:np})}).then(x=>x.json());if(r.ok){cloud.published=np;saveCloud();render()}else alert("Hata.")}catch(e){alert("Hata: "+e)}}
+function publicLink(){return location.origin+"/?w="+(cloud?cloud.id:"")}
+function copyPublicLink(){const l=publicLink();if(navigator.clipboard)navigator.clipboard.writeText(l).then(()=>alert("Link kopyalandi:\n"+l),()=>prompt("Kopyala:",l));else prompt("Kopyala:",l)}
+async function loadPublic(wid){readOnly=true;document.body.classList.add("ro");try{const r=await fetch(API+"/api/public?id="+encodeURIComponent(wid)).then(x=>x.json());store=(r.ok&&r.data)?r.data:{};if(!r.ok)setTimeout(()=>alert("Yayin bulunamadi veya kapali."),100)}catch(e){store={}}cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):JSON.parse(JSON.stringify(DEFAULT_CFG));if(!store.staff)store.staff=[];year=2026;month=7;view=(window.innerWidth<720?"day":"week");initTheme();setMonth(year,month,false)}
+function cloudCard(){let h="<div class='setcard cloudcard' style='grid-column:1/-1'><h3>&#9729; Bulut Senkron & Yay\u0131nla</h3>";if(!cloud||!cloud.id){h+="<div style='font-size:12px;color:var(--ink2)'>Verilerin \u015fu an sadece bu cihazda. Buluta ba\u011flarsan cihazlar aras\u0131 senkron olur ve yedeklenir.</div>";h+="<div class='row'><button class='primary' onclick='cloudConnect()'>"+(cloudBusy?"Ba\u011flan\u0131yor\u2026":"Buluta Ba\u011fla")+"</button><button onclick='cloudLinkPrompt()'>Cihaz Ba\u011fla (kod ile)</button></div>";}else{const last=cloud.pushedAt?new Date(cloud.pushedAt).toLocaleString("tr"):"\u2014";h+="<div style='font-size:12px;color:var(--ink2)'><span class='cloud-dot'></span>Ba\u011fl\u0131 \u00b7 ID <b class='mono'>"+esc(cloud.id)+"</b> \u00b7 son senkron: "+last+"</div>";h+="<div class='row'><button onclick='cloudPushNow()'>&#8593; \u015eimdi Y\u00fckle</button><button onclick='cloudPull(true)'>&#8595; \u015eimdi \u0130ndir</button><button onclick='cloudDisconnect()'>Ba\u011flant\u0131y\u0131 Kald\u0131r</button></div>";h+="<div style='margin-top:12px;font-size:10px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.04em'>Ba\u015fka cihaza ba\u011fla \u2014 kod:</div><div class='codebox'>"+esc(cloud.id+":"+cloud.token)+"</div>";h+="<div style='margin-top:16px'><h3 style='font-size:13px;margin:0 0 8px'>Yay\u0131nla (salt-okunur link)</h3>";if(cloud.published){h+="<div style='font-size:12px;color:var(--ink2)'>Program yay\u0131nda. Personelle payla\u015fabilece\u011fin link:</div><div class='codebox'>"+esc(publicLink())+"</div><div class='row'><button class='primary' onclick='copyPublicLink()'>Linki Kopyala</button><button onclick='cloudPublishToggle()'>Yay\u0131ndan Kald\u0131r</button></div>";}else{h+="<div style='font-size:12px;color:var(--ink2)'>Yay\u0131nlarsan herkes linkle program\u0131 salt-okunur g\u00f6rebilir (d\u00fczenleyemez).</div><div class='row'><button class='primary' onclick='cloudPublishToggle()'>Yay\u0131nla</button></div>";}h+="</div>";}h+="</div>";return h}
 
 load();
 </script>
