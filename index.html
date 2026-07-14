@@ -2,7 +2,7 @@
 <html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vardiya Planlayıcı</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +32,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:13px;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 18px;position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 18px;position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent) 55%,transparent)}
 .logo{display:flex;align-items:center;gap:10px}
 .logomark{display:grid;grid-template-columns:1fr 1fr;gap:2px;width:22px;height:22px;flex:none}
@@ -43,12 +43,17 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px
 .brand b{font-size:15px;letter-spacing:-.015em;font-weight:800}
 .brand span{font-size:11px;color:var(--ink2)}
 .month-nav{display:flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:2px}
-.month-nav .m{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:13.5px;min-width:130px;text-align:center}
+.month-nav .m{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:13.5px;min-width:126px;text-align:center}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:2px;gap:2px}
+.seg button{border:none;background:transparent;padding:6px 12px;border-radius:8px;font-weight:600;font-size:12px;color:var(--ink2)}
+.seg button.on{background:var(--panel);color:var(--accent);box-shadow:var(--shadow)}
+.seg button:hover{transform:none;background:var(--line2)}
+.seg button.on:hover{background:var(--panel)}
 button{font-family:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:9px;cursor:pointer;font-weight:500;transition:.14s;display:inline-flex;align-items:center;gap:6px}
 button:hover{border-color:var(--ink3);background:var(--panel2);transform:translateY(-1px)}
 button:active{transform:translateY(0)}
 button.primary{background:linear-gradient(135deg,var(--accent),#6d63f0);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.3)}
-button.primary:hover{filter:brightness(1.08);box-shadow:0 4px 14px rgba(79,70,229,.4)}
+button.primary:hover{filter:brightness(1.08)}
 button.icon{padding:7px 9px}
 .month-nav button{border:none;background:transparent;padding:5px 9px}
 .month-nav button:hover{background:var(--line2);transform:none}
@@ -56,9 +61,9 @@ button.icon{padding:7px 9px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .saved{font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:5px}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 20%,transparent)}
-.wrap{padding:16px 18px 60px;max-width:1600px;margin:0 auto}
+.wrap{padding:16px 18px 70px;max-width:1600px;margin:0 auto}
 .bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);transition:.2s;position:relative;overflow:hidden}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);transition:.2s}
 .stat:hover{transform:translateY(-2px)}
 .stat .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none;background:var(--accent-soft);color:var(--accent)}
 .stat.t-hours .ic{background:var(--sab-bg);color:var(--sab-tx)}
@@ -68,7 +73,7 @@ button.icon{padding:7px 9px}
 .stat .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
 .stat .tx b{font-family:"JetBrains Mono",monospace;font-size:19px;font-weight:700;line-height:1}
 .stat .tx span{font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
-.gridbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:calc(100vh - 300px);position:relative;box-shadow:var(--shadow)}
+.gridbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:calc(100vh - 300px);position:relative;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
 th,td{border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0;text-align:center;white-space:nowrap}
 thead th{position:sticky;top:0;background:var(--panel);z-index:20;font-weight:600;color:var(--ink2)}
@@ -84,7 +89,7 @@ tbody tr:hover .namecol{background:var(--panel2)}
 tbody .namecol{font-size:12.5px}
 .nmline{display:flex;align-items:center;gap:6px}
 .nn{font-size:8.5px;color:var(--gec-tx);font-weight:800;background:var(--gec-bg);border-radius:4px;padding:1px 4px;letter-spacing:.02em}
-.distbar{display:flex;height:4px;border-radius:3px;overflow:hidden;margin-top:5px;background:var(--line2);width:130px}
+.distbar{display:flex;height:4px;border-radius:3px;overflow:hidden;margin-top:5px;background:var(--line2);width:130px;max-width:100%}
 .distbar i{height:100%}
 .distbar .s{background:var(--sab-ac)}.distbar .o{background:var(--ogl-ac)}.distbar .g{background:var(--gec-ac)}.distbar .f{background:var(--off-ac)}
 .cell{cursor:pointer;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;height:38px;user-select:none;transition:.12s;position:relative}
@@ -96,14 +101,56 @@ tbody .namecol{font-size:12.5px}
 .cell.warn::after{content:"";position:absolute;top:3px;right:3px;width:0;height:0;border-top:8px solid var(--warn);border-left:8px solid transparent}
 .sumcol{position:sticky;background:var(--panel);z-index:22;min-width:56px;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12.5px}
 tbody tr:hover .sumcol{background:var(--panel2)}
-.sumcol.net{color:var(--sab-tx)}
+.sc-net{right:112px;color:var(--sab-tx)}.sc-vard{right:56px}.sc-cost{right:0}
 .sumhead{font-size:9px;color:var(--ink2);font-weight:700;padding:5px 3px;text-transform:uppercase}
 tfoot td{background:var(--panel2);height:30px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700}
 tfoot .namecol{background:var(--panel2);font-family:Inter;font-weight:700;font-size:10.5px;color:var(--ink2)}
-.covchip{display:inline-grid;place-items:center;width:26px;height:20px;border-radius:6px;font-size:11px;font-weight:700;margin:0 auto}
-.cov-exact{background:var(--sab-bg);color:var(--sab-tx)}
-.cov-under{background:var(--warn-soft);color:var(--warn)}
-.cov-over{background:var(--ogl-bg);color:var(--ogl-tx)}
+.covchip{display:inline-grid;place-items:center;width:26px;height:20px;border-radius:6px;font-size:11px;font-weight:700}
+.cov-exact{background:var(--sab-bg);color:var(--sab-tx)}.cov-under{background:var(--warn-soft);color:var(--warn)}.cov-over{background:var(--ogl-bg);color:var(--ogl-tx)}
+
+/* ---- GÜN & KİŞİ görünümleri ---- */
+.viewpane{margin-top:2px}
+.navrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
+.navrow .lbl{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:15px;min-width:170px;text-align:center}
+.navrow .lbl small{display:block;font-family:Inter;font-size:11px;color:var(--ink2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.navrow button{width:40px;height:40px;justify-content:center;border-radius:12px;font-size:16px}
+.today-pill{font-size:11px;padding:5px 10px;border-radius:20px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.scard{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.scard header{position:static;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:none;background:none}
+.scard header::after{display:none}
+.scard.S header{background:var(--sab-bg)}.scard.O header{background:var(--ogl-bg)}.scard.G header{background:var(--gec-bg)}.scard.F header{background:var(--off-bg)}
+.scard .st{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px}
+.scard.S .st{color:var(--sab-tx)}.scard.O .st{color:var(--ogl-tx)}.scard.G .st{color:var(--gec-tx)}.scard.F .st{color:var(--off-tx)}
+.scard .st .time{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:11px;opacity:.8}
+.scard .cnt{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:14px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.55)}
+.scard.warn .cnt{background:var(--warn);color:#fff}
+.plist{padding:6px}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13.5px;transition:.12s}
+.prow:hover,.prow:active{background:var(--panel2)}
+.prow .av{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;color:#fff}
+.prow.S .av{background:var(--sab-ac)}.prow.O .av{background:var(--ogl-ac)}.prow.G .av{background:var(--gec-ac)}.prow.F .av{background:var(--off-ac)}
+.prow .wtag{margin-left:auto;color:var(--warn);font-weight:800;font-size:12px}
+.prow.empty{color:var(--ink3);font-weight:500;cursor:default;font-size:12.5px}
+.prow.empty:hover{background:none}
+/* kişi görünümü */
+.pchips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+.pchip{flex:none;padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--panel);font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.pchip.on{background:var(--accent);color:#fff;border-color:transparent}
+.psum{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 14px}
+.pstat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 14px;box-shadow:var(--shadow)}
+.pstat b{font-family:"JetBrains Mono",monospace;font-size:17px;display:block;font-weight:700}
+.pstat span{font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.daylist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.dayrow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;box-shadow:var(--shadow);transition:.12s}
+.dayrow:hover,.dayrow:active{transform:translateY(-1px);border-color:var(--ink3)}
+.dayrow.wknd{background:var(--wknd)}
+.dayrow .dd{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:16px;width:30px;text-align:center;flex:none}
+.dayrow .dw{font-size:10px;color:var(--ink2);text-transform:uppercase;font-weight:700;width:38px;flex:none}
+.dayrow .sb{margin-left:auto;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;padding:5px 10px;border-radius:8px}
+.sb.S{background:var(--sab-bg);color:var(--sab-tx)}.sb.O{background:var(--ogl-bg);color:var(--ogl-tx)}.sb.G{background:var(--gec-bg);color:var(--gec-tx)}.sb.F{background:var(--off-bg);color:var(--off-tx)}
+.dayrow .wtag{color:var(--warn);font-weight:800;font-size:12px}
+
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-top:16px;padding:16px 18px;box-shadow:var(--shadow)}
 .panel h3{margin:0 0 12px;font-size:13.5px;display:flex;align-items:center;gap:8px;font-weight:700}
 .badge{background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
@@ -111,7 +158,7 @@ tfoot .namecol{background:var(--panel2);font-family:Inter;font-weight:700;font-s
 .warnlist{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
 .warnrow{display:flex;gap:10px;align-items:center;font-size:12px;padding:8px 10px;border-radius:9px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 15%,transparent)}
 .warnrow .wic{color:var(--warn);font-weight:800;flex:none}
-.warnrow b{color:var(--warn);font-weight:700;min-width:120px}
+.warnrow b{color:var(--warn);font-weight:700;min-width:110px}
 .warnrow.ok{background:color-mix(in srgb,var(--ok) 10%,transparent);border-color:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
 .warnrow.ok .wic{color:var(--ok)}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -130,29 +177,56 @@ tfoot .namecol{background:var(--panel2);font-family:Inter;font-weight:700;font-s
 .stafftbl button{padding:4px 9px;font-size:11px}
 .details{margin-top:16px}
 summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:6px 0;user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
 summary::before{content:"▸";color:var(--ink3);transition:.15s;font-size:11px}
 details[open] summary::before{transform:rotate(90deg)}
 .overlay{position:fixed;inset:0;background:rgba(10,14,20,.4);backdrop-filter:blur(3px);z-index:100;display:none;align-items:center;justify-content:center}
 .overlay.on{display:flex}
 .editor{background:var(--panel);border-radius:16px;box-shadow:var(--shadow-lg);width:340px;max-width:92vw;padding:20px;animation:pop .16s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .editor h4{margin:0 0 2px;font-size:15px;font-weight:700}
 .editor .who{color:var(--ink2);font-size:12px;margin-bottom:16px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;flex:1;text-align:center;min-width:120px;line-height:1.5;transition:.14s}
+.chip{font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;padding:12px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;flex:1;text-align:center;min-width:120px;line-height:1.5;transition:.14s}
 .chip:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .chip.S{background:var(--sab-bg);color:var(--sab-tx);border-color:transparent}
 .chip.O{background:var(--ogl-bg);color:var(--ogl-tx);border-color:transparent}
 .chip.G{background:var(--gec-bg);color:var(--gec-tx);border-color:transparent}
 .chip.off{background:var(--off-bg);color:var(--off-tx);border-color:transparent}
 .ed-actions{display:flex;gap:8px;margin-top:16px}
-.ed-actions button{flex:1;justify-content:center}
+.ed-actions button{flex:1;justify-content:center;padding:11px}
 .hasi-badge{position:fixed;right:14px;bottom:14px;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:5px 12px 5px 8px;font-size:11px;color:var(--ink2);text-decoration:none;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow);transition:.16s}
 .hasi-badge:hover{transform:translateY(-2px);border-color:var(--accent2)}
 .hasi-badge b{color:var(--accent2);font-weight:800;letter-spacing:-.01em}
 .hasi-badge .hi{width:14px;height:14px;border-radius:4px;background:var(--accent2)}
-@media(max-width:640px){header{padding:9px 11px;gap:9px}.wrap{padding:10px 11px 40px}.actions button span{display:none}.brand span{display:none}.hasi-badge{display:none}}
-@media print{header .actions,.panel,.overlay,.bar,.hasi-badge{display:none!important}.gridbox{max-height:none;border:none;overflow:visible;box-shadow:none}body{background:#fff}header::after{display:none}}
+
+/* ---- MOBİL ---- */
+@media(max-width:820px){
+  .sc-vard,.sc-cost{display:none}
+  .sc-net{right:0}
+  th.day,td.day{width:58px;min-width:58px}
+  .namecol{min-width:120px;padding:5px 8px}
+  .distbar{width:96px}
+}
+@media(max-width:640px){
+  header{padding:9px 12px;gap:8px}
+  .brand b{font-size:14px}.brand span{display:none}
+  .month-nav{order:3}.seg{order:4}
+  .wrap{padding:12px 12px 80px}
+  .actions button span{display:none}
+  .hasi-badge{display:none}
+  .gridbox{max-height:calc(100vh - 260px)}
+  .bar{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{padding:10px}
+  .stat .tx b{font-size:16px}
+  /* editör mobilde alt-sayfa (bottom sheet) */
+  .overlay{align-items:flex-end}
+  .editor{width:100%;max-width:100%;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));animation:sheet .22s cubic-bezier(.2,.9,.3,1.1)}
+  .chip{min-width:100%;padding:14px}
+  .chips{gap:8px}
+}
+@media print{header .actions,.panel,.overlay,.bar,.hasi-badge,.seg,.navrow{display:none!important}.gridbox{max-height:none;border:none;overflow:visible;box-shadow:none}body{background:#fff}header::after{display:none}}
 </style>
 </head>
 <body>
@@ -166,6 +240,11 @@ details[open] summary::before{transform:rotate(90deg)}
     <div class="m mono" id="monthLabel">—</div>
     <button onclick="shiftMonth(1)">&#8250;</button>
   </div>
+  <div class="seg" id="viewSeg">
+    <button data-v="grid" onclick="setView('grid')">Tablo</button>
+    <button data-v="day" onclick="setView('day')">Gün</button>
+    <button data-v="person" onclick="setView('person')">Kişi</button>
+  </div>
   <div class="spacer"></div>
   <div class="actions">
     <button class="primary" onclick="doGenerate()">&#9889;<span>Otomatik Üret</span></button>
@@ -178,7 +257,9 @@ details[open] summary::before{transform:rotate(90deg)}
 </header>
 <div class="wrap">
   <div class="bar" id="statbar"></div>
-  <div class="gridbox"><table id="grid"></table></div>
+  <div id="gridWrap" class="gridbox"><table id="grid"></table></div>
+  <div id="dayView" class="viewpane" style="display:none"></div>
+  <div id="personView" class="viewpane" style="display:none"></div>
 
   <div class="panel">
     <h3>Kural Uyarıları <span class="badge" id="warnBadge">0</span></h3>
@@ -193,7 +274,7 @@ details[open] summary::before{transform:rotate(90deg)}
   </div>
 
   <div class="panel">
-    <details class="details" open>
+    <details class="details">
       <summary>Ayarlar &amp; Personel</summary>
       <div class="cfg" style="margin-top:14px">
         <div><label>Sabah kişi</label><input type="number" id="cfgNS" min="0"></div>
@@ -205,8 +286,8 @@ details[open] summary::before{transform:rotate(90deg)}
         <div><label>Haftalık max (saat)</label><input type="number" id="cfgWeekly" min="0"></div>
         <div><label>Saat ücreti € (genel)</label><input type="number" id="cfgRate" min="0" step="0.5"></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px"><button class="primary" onclick="saveCfg()">Ayarları Kaydet</button><button onclick="addStaff()">+ Personel</button></div>
-      <table class="stafftbl" id="staffTbl"></table>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="primary" onclick="saveCfg()">Ayarları Kaydet</button><button onclick="addStaff()">+ Personel</button></div>
+      <div style="overflow-x:auto"><table class="stafftbl" id="staffTbl"></table></div>
       <div style="font-size:11px;color:var(--ink2);margin-top:8px">Gece ✓ kapalı = o personel gece vardiyasına atanmaz. Ücret boşsa genel ücret kullanılır.</div>
     </details>
   </div>
@@ -220,12 +301,14 @@ details[open] summary::before{transform:rotate(90deg)}
 
 <script>
 const TRDAY=["PAZAR","PZT","SALI","ÇAR","PERŞ","CUMA","CMTS"];
+const TRDAYL=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
 const MONTHS=["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
 const SEED_NAMES=["ESENGÜL","ALİ","HÜSEYİN","SEVHAN","OĞUZHAN","TESLİME","MERVE","ŞERİFE","DİLEK","ALİ KEMAL","MEHMET","MUSTAFA","TUĞBA","ÖZGE","NİSA","ESMA","ESRA","HATİCE","GÜLSÜM","RECEP AVCI"];
 const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
 
 let store, key, year, month, staff, cfg;
+let view="grid", selDay=0, selPerson=0;
 let mem={};
 function sGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
 function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
@@ -240,6 +323,7 @@ function load(){
   cfg=store.cfg?Object.assign({},DEFAULT_CFG,store.cfg):JSON.parse(JSON.stringify(DEFAULT_CFG));
   if(!store.staff) store.staff=SEED_NAMES.map(n=>({name:n,noNight:false,rate:null}));
   year=2026; month=7;
+  view=(sGet("vardiya_view"))||(window.innerWidth<720?"day":"grid");
   initTheme();
   setMonth(year,month,true);
 }
@@ -254,12 +338,15 @@ function setMonth(y,m,autogen){
   let empty=true;
   staff.forEach(s=>{let d=saved[s.name];if(!d){d=Array(dim).fill("")}else{d=d.slice();while(d.length<dim)d.push("");d.length=dim;if(d.some(x=>x))empty=false}s._days=d});
   document.getElementById("monthLabel").textContent=MONTHS[m-1]+" "+y;
+  const today=new Date();if(today.getFullYear()===y&&today.getMonth()+1===m)selDay=today.getDate()-1; else selDay=Math.min(selDay,dim-1);
+  if(selPerson>=staff.length)selPerson=0;
   if(empty&&autogen){generate()}
   render();syncCfgInputs();
 }
 function shiftMonth(d){let m=month+d,y=year;if(m<1){m=12;y--}if(m>12){m=1;y++}
   store.months=store.months||{};store.months[key]=plan();sSet("vardiya_adv",JSON.stringify(store));
   setMonth(y,m,true)}
+function setView(v){view=v;sSet("vardiya_view",v);render()}
 
 function pmin(hhmm){const[h,m]=hhmm.split(":").map(Number);return h*60+(m||0)}
 function shiftByVal(v){for(const sh of cfg.shifts){if(v===sh.start+"-"+sh.end)return sh}return null}
@@ -272,14 +359,7 @@ function generate(){
   const S=cfg.shifts.map(sh=>Object.assign({need: sh.key==="S"?cfg.ns: sh.key==="O"?cfg.no: sh.key==="G"?cfg.ng:0},sh));
   staff.forEach(s=>s._days=Array(dim).fill(""));
   const st={};staff.forEach(s=>st[s.name]={last:null,streak:0,tot:0,g:0});
-  const elig=(s,sh)=>{
-    const t=st[s.name];
-    if(t.streak>=cfg.streak)return false;
-    if(sh.key==="G"&&s.noNight)return false;
-    if(t.last===null)return true;
-    const prev=S.find(x=>x.key===t.last);
-    return restBetween(prev,sh)>=cfg.rest;
-  };
+  const elig=(s,sh)=>{const t=st[s.name];if(t.streak>=cfg.streak)return false;if(sh.key==="G"&&s.noNight)return false;if(t.last===null)return true;const prev=S.find(x=>x.key===t.last);return restBetween(prev,sh)>=cfg.rest};
   const score=(s,sh)=>{const t=st[s.name];let v=t.tot+t.streak*2.2;if(sh.key==="G")v+=t.g*3;return v+Math.random()*0.05};
   for(let di=0;di<dim;di++){
     const assigned={};
@@ -297,78 +377,38 @@ function generate(){
   }
   return {ok:true};
 }
-function doGenerate(){
-  const r=generate();
-  if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+" vardiyası dolmadı ("+r.got+" kişi). Kadro sayısını veya 'gece yapamaz' kısıtlarını gözden geçir.");render();return}
-  persist();render();
-}
+function doGenerate(){const r=generate();if(!r.ok){alert("Üretilemedi: "+r.day+". gün "+r.shift+" vardiyası dolmadı ("+r.got+" kişi). Kadro sayısını veya 'gece yapamaz' kısıtlarını gözden geçir.");render();return}persist();render()}
 function clearMonth(){if(!confirm("Bu ayın planı silinsin mi?"))return;const dim=daysInMonth(year,month);staff.forEach(s=>s._days=Array(dim).fill(""));persist();render()}
 
 function warnings(){
   const W=[],cw={};const dim=daysInMonth(year,month);
   staff.forEach((s,si)=>{
     let streak=0;
-    for(let i=0;i<dim;i++){
-      const v=s._days[i],sh=shiftByVal(v);
-      if(sh){streak++;if(streak>cfg.streak){W.push({who:s.name,day:i+1,msg:streak+" gün arka arkaya izinsiz"});cw[si+"_"+i]=1}}
-      else if(v==="İZİN"||v===""){streak=0}
-    }
-    for(let i=0;i<dim-1;i++){
-      const a=shiftByVal(s._days[i]),b=shiftByVal(s._days[i+1]);
-      if(a&&b){const r=restBetween(a,b);if(r<cfg.rest){W.push({who:s.name,day:i+2,msg:"dinlenme "+r.toFixed(1)+"s (<"+cfg.rest+"s)"});cw[si+"_"+(i+1)]=1}}
-    }
+    for(let i=0;i<dim;i++){const v=s._days[i],sh=shiftByVal(v);if(sh){streak++;if(streak>cfg.streak){W.push({who:s.name,day:i+1,msg:streak+" gün arka arkaya izinsiz"});cw[si+"_"+i]=1}}else if(v==="İZİN"||v===""){streak=0}}
+    for(let i=0;i<dim-1;i++){const a=shiftByVal(s._days[i]),b=shiftByVal(s._days[i+1]);if(a&&b){const r=restBetween(a,b);if(r<cfg.rest){W.push({who:s.name,day:i+2,msg:"dinlenme "+r.toFixed(1)+"s (<"+cfg.rest+"s)"});cw[si+"_"+(i+1)]=1}}}
     let wk=0;
-    for(let i=0;i<dim;i++){const dow=new Date(year,month-1,i+1).getDay();if(dow===1)wk=0;wk+=netHours(s._days[i]);
-      const nd=i+1<dim?new Date(year,month-1,i+2).getDay():-1;
-      if((nd===1||i===dim-1)&&wk>cfg.weekly)W.push({who:s.name,day:i+1,msg:"haftalık "+wk.toFixed(1)+"s net (>"+cfg.weekly+"s)"})}
+    for(let i=0;i<dim;i++){const dow=new Date(year,month-1,i+1).getDay();if(dow===1)wk=0;wk+=netHours(s._days[i]);const nd=i+1<dim?new Date(year,month-1,i+2).getDay():-1;if((nd===1||i===dim-1)&&wk>cfg.weekly)W.push({who:s.name,day:i+1,msg:"haftalık "+wk.toFixed(1)+"s net (>"+cfg.weekly+"s)"})}
   });
-  for(let i=0;i<dim;i++){
-    const c={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[i]);if(sh&&c[sh.key]!=null)c[sh.key]++});
-    if(c.S!==cfg.ns)W.push({who:"KADRO",day:i+1,msg:"Sabah "+c.S+"/"+cfg.ns});
-    if(c.O!==cfg.no)W.push({who:"KADRO",day:i+1,msg:"Öğlen "+c.O+"/"+cfg.no});
-    if(c.G!==cfg.ng)W.push({who:"KADRO",day:i+1,msg:"Gece "+c.G+"/"+cfg.ng});
-  }
+  for(let i=0;i<dim;i++){const c={S:0,O:0,G:0};staff.forEach(s=>{const sh=shiftByVal(s._days[i]);if(sh&&c[sh.key]!=null)c[sh.key]++});
+    if(c.S!==cfg.ns)W.push({who:"KADRO",day:i+1,msg:"Sabah "+c.S+"/"+cfg.ns});if(c.O!==cfg.no)W.push({who:"KADRO",day:i+1,msg:"Öğlen "+c.O+"/"+cfg.no});if(c.G!==cfg.ng)W.push({who:"KADRO",day:i+1,msg:"Gece "+c.G+"/"+cfg.ng})}
   return {W,cw};
 }
-
-function personStats(s){let sh={S:0,O:0,G:0},tot=0,net=0;const dim=daysInMonth(year,month);
-  for(let i=0;i<dim;i++){const x=shiftByVal(s._days[i]);if(x){sh[x.key]++;tot++;net+=netHours(s._days[i])}}
-  const rate=(s.rate!=null&&s.rate!=="")?+s.rate:+cfg.rate;
-  return {sh,tot,net:Math.round(net*10)/10,cost:Math.round(net*rate)}}
+function personStats(s){let sh={S:0,O:0,G:0},tot=0,net=0;const dim=daysInMonth(year,month);for(let i=0;i<dim;i++){const x=shiftByVal(s._days[i]);if(x){sh[x.key]++;tot++;net+=netHours(s._days[i])}}const rate=(s.rate!=null&&s.rate!=="")?+s.rate:+cfg.rate;return {sh,tot,net:Math.round(net*10)/10,cost:Math.round(net*rate)}}
 
 function render(){
-  const dim=daysInMonth(year,month);const {W,cw}=warnings();
+  const {W,cw}=warnings();window._cw=cw;
   let totNet=0,totCost=0,totShift=0;staff.forEach(s=>{const p=personStats(s);totNet+=p.net;totCost+=p.cost;totShift+=p.tot});
   const rate=+cfg.rate;
   document.getElementById("statbar").innerHTML=
-    stat("&#128101;",staff.length,"personel","")+
-    stat("&#128197;",totShift,"vardiya / ay","")+
+    stat("&#128101;",staff.length,"personel","")+stat("&#128197;",totShift,"vardiya / ay","")+
     stat("&#9201;",totNet.toFixed(0)+"s","net işgücü","t-hours")+
     (rate>0?stat("&#128176;",totCost.toLocaleString("tr")+" €","aylık işçilik","t-cost"):"")+
     stat(W.length?"&#9888;":"&#10003;",W.length,"kural uyarısı",W.length?"t-warn":"t-ok");
-  let h="<thead><tr><th class='namecol'>Personel</th>";
-  for(let d=1;d<=dim;d++){const dow=new Date(year,month-1,d).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";
-    h+="<th class='day"+wk+"'><div class='dnum'>"+d+"</div><div class='dname'>"+TRDAY[dow]+"</div></th>"}
-  h+="<th class='sumcol sumhead' style='right:112px'>NET s</th><th class='sumcol sumhead' style='right:56px'>Vard.</th><th class='sumcol sumhead' style='right:0'>&euro;</th></tr></thead><tbody>";
-  staff.forEach((s,si)=>{
-    const p=personStats(s);const off=dim-p.tot;const pc=x=>dim?(x/dim*100).toFixed(2):0;
-    const bar="<div class='distbar'><i class='s' style='width:"+pc(p.sh.S)+"%'></i><i class='o' style='width:"+pc(p.sh.O)+"%'></i><i class='g' style='width:"+pc(p.sh.G)+"%'></i><i class='f' style='width:"+pc(off)+"%'></i></div>";
-    h+="<tr><td class='namecol'><div class='nmline'>"+esc(s.name)+(s.noNight?"<span class='nn'>gece✕</span>":"")+"</div>"+bar+"</td>";
-    for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();
-      const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("c-"+sh.key):(v==="İZİN"?"c-off":"");const wn=cw[si+"_"+d]?" warn":"";
-      const disp=sh?(sh.start.slice(0,5)+"-"+sh.end.slice(0,5)):(v==="İZİN"?"İZİN":"");
-      h+="<td class='cell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
-    h+="<td class='sumcol net' style='right:112px'>"+p.net+"</td><td class='sumcol' style='right:56px'>"+p.tot+"</td><td class='sumcol' style='right:0'>"+(rate>0||s.rate?p.cost:"–")+"</td></tr>"});
-  h+="</tbody><tfoot>";
-  const rows=[["Sabah",cfg.ns,"S"],["Öğlen",cfg.no,"O"],["Gece",cfg.ng,"G"]];
-  rows.forEach(([lbl,target,k])=>{
-    h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
-    for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});
-      const cc=c===target?"cov-exact":(c<target?"cov-under":"cov-over");
-      h+="<td><span class='covchip "+cc+"'>"+c+"</span></td>"}
-    h+="<td class='sumcol' style='right:112px'></td><td class='sumcol' style='right:56px'></td><td class='sumcol' style='right:0'></td></tr>"});
-  h+="</tfoot>";
-  document.getElementById("grid").innerHTML=h;
+  document.getElementById("gridWrap").style.display=view==="grid"?"":"none";
+  document.getElementById("dayView").style.display=view==="day"?"":"none";
+  document.getElementById("personView").style.display=view==="person"?"":"none";
+  document.querySelectorAll("#viewSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+  if(view==="grid")renderGrid(cw); else if(view==="day")renderDay(cw); else renderPerson(cw);
   const wl=document.getElementById("warnList"),wb=document.getElementById("warnBadge");
   wb.textContent=W.length;wb.className="badge"+(W.length?"":" zero");
   wl.innerHTML=W.length?W.slice(0,60).map(x=>"<div class='warnrow'><span class='wic'>&#9650;</span><b>"+esc(x.who)+" · "+x.day+"</b><span>"+esc(x.msg)+"</span></div>").join(""):"<div class='warnrow ok'><span class='wic'>&#10003;</span><span>Tüm kurallar sağlanıyor. Plan temiz.</span></div>";
@@ -377,20 +417,76 @@ function render(){
 function stat(ic,v,l,t){return "<div class='stat "+(t||"")+"'><div class='ic'>"+ic+"</div><div class='tx'><b>"+v+"</b><span>"+l+"</span></div></div>"}
 function esc(s){return(s+"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}
 
-function syncCfgInputs(){const g=id=>document.getElementById(id);
-  g("cfgNS").value=cfg.ns;g("cfgNO").value=cfg.no;g("cfgNG").value=cfg.ng;g("cfgBreak").value=cfg.breakMin;
-  g("cfgRest").value=cfg.rest;g("cfgStreak").value=cfg.streak;g("cfgWeekly").value=cfg.weekly;g("cfgRate").value=cfg.rate}
-function saveCfg(){const g=id=>+document.getElementById(id).value;
-  cfg.ns=g("cfgNS");cfg.no=g("cfgNO");cfg.ng=g("cfgNG");cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");
-  persist();render()}
-function renderStaffTbl(){
-  let h="<tr><th>Personel</th><th>Gece?</th><th>Saat ücreti €</th><th></th></tr>";
-  staff.forEach((s,i)=>{h+="<tr><td><input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></td>"+
-    "<td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td>"+
-    "<td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td>"+
-    "<td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});
-  document.getElementById("staffTbl").innerHTML=h;
+function renderGrid(cw){
+  const dim=daysInMonth(year,month);const rate=+cfg.rate;
+  let h="<thead><tr><th class='namecol'>Personel</th>";
+  for(let d=1;d<=dim;d++){const dow=new Date(year,month-1,d).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";h+="<th class='day"+wk+"'><div class='dnum'>"+d+"</div><div class='dname'>"+TRDAY[dow]+"</div></th>"}
+  h+="<th class='sumcol sumhead sc-net'>NET s</th><th class='sumcol sumhead sc-vard'>Vard.</th><th class='sumcol sumhead sc-cost'>&euro;</th></tr></thead><tbody>";
+  staff.forEach((s,si)=>{
+    const p=personStats(s);const off=dim-p.tot;const pc=x=>dim?(x/dim*100).toFixed(2):0;
+    const bar="<div class='distbar'><i class='s' style='width:"+pc(p.sh.S)+"%'></i><i class='o' style='width:"+pc(p.sh.O)+"%'></i><i class='g' style='width:"+pc(p.sh.G)+"%'></i><i class='f' style='width:"+pc(off)+"%'></i></div>";
+    h+="<tr><td class='namecol'><div class='nmline'>"+esc(s.name)+(s.noNight?"<span class='nn'>gece✕</span>":"")+"</div>"+bar+"</td>";
+    for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wkndcol":"";const cls=sh?("c-"+sh.key):(v==="İZİN"?"c-off":"");const wn=cw[si+"_"+d]?" warn":"";const disp=sh?(sh.start.slice(0,5)+"-"+sh.end.slice(0,5)):(v==="İZİN"?"İZİN":"");h+="<td class='cell day "+cls+wk+wn+"' onclick='openEd("+si+","+d+")'>"+disp+"</td>"}
+    h+="<td class='sumcol sc-net'>"+p.net+"</td><td class='sumcol sc-vard'>"+p.tot+"</td><td class='sumcol sc-cost'>"+(rate>0||s.rate?p.cost:"–")+"</td></tr>"});
+  h+="</tbody><tfoot>";
+  [["Sabah",cfg.ns,"S"],["Öğlen",cfg.no,"O"],["Gece",cfg.ng,"G"]].forEach(([lbl,target,k])=>{
+    h+="<tr><td class='namecol'>"+lbl+" ("+target+")</td>";
+    for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});const cc=c===target?"cov-exact":(c<target?"cov-under":"cov-over");h+="<td><span class='covchip "+cc+"'>"+c+"</span></td>"}
+    h+="<td class='sumcol sc-net'></td><td class='sumcol sc-vard'></td><td class='sumcol sc-cost'></td></tr>"});
+  h+="</tfoot>";
+  document.getElementById("grid").innerHTML=h;
 }
+
+function renderDay(cw){
+  const dim=daysInMonth(year,month);if(selDay>=dim)selDay=dim-1;if(selDay<0)selDay=0;
+  const dow=new Date(year,month-1,selDay+1).getDay();
+  const today=new Date();const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===selDay+1;
+  let h="<div class='navrow'><button onclick='dayNav(-1)'>&#8249;</button>";
+  h+="<div class='lbl'>"+(selDay+1)+" "+MONTHS[month-1].charAt(0)+MONTHS[month-1].slice(1).toLowerCase()+"<small>"+TRDAYL[dow]+(isToday?" · bugün":"")+"</small></div>";
+  h+="<button onclick='dayNav(1)'>&#8250;</button>";
+  if(!isToday&&today.getFullYear()===year&&today.getMonth()+1===month)h+="<button class='today-pill' onclick='goToday()'>Bugün</button>";
+  h+="</div><div class='dgrid'>";
+  const targets={S:cfg.ns,O:cfg.no,G:cfg.ng};
+  cfg.shifts.forEach(sh=>{
+    const list=[];staff.forEach((s,si)=>{if(s._days[selDay]===sh.start+"-"+sh.end)list.push({s,si})});
+    const bad=list.length!==targets[sh.key];
+    h+="<div class='scard "+sh.key+(bad?" warn":"")+"'><header><div class='st'>"+sh.label+" <span class='time'>"+sh.start+"-"+sh.end+"</span></div><div class='cnt'>"+list.length+"/"+targets[sh.key]+"</div></header><div class='plist'>";
+    if(list.length)list.forEach(({s,si})=>{const w=cw[si+"_"+selDay]?"<span class='wtag'>&#9650;</span>":"";h+="<div class='prow "+sh.key+"' onclick='openEd("+si+","+selDay+")'><div class='av'>"+ini(s.name)+"</div>"+esc(s.name)+w+"</div>"});
+    else h+="<div class='prow empty'>— kimse atanmadı —</div>";
+    h+="</div></div>";
+  });
+  const off=[];staff.forEach((s,si)=>{const v=s._days[selDay];if(!shiftByVal(v))off.push({s,si})});
+  h+="<div class='scard F'><header><div class='st'>İzinli / Boş</div><div class='cnt'>"+off.length+"</div></header><div class='plist'>";
+  if(off.length)off.forEach(({s,si})=>{h+="<div class='prow F' onclick='openEd("+si+","+selDay+")'><div class='av'>"+ini(s.name)+"</div>"+esc(s.name)+"</div>"});
+  else h+="<div class='prow empty'>— herkes çalışıyor —</div>";
+  h+="</div></div></div>";
+  document.getElementById("dayView").innerHTML=h;
+}
+function dayNav(d){const dim=daysInMonth(year,month);selDay+=d;if(selDay<0){shiftMonth(-1);selDay=daysInMonth(year,month)-1;render();return}if(selDay>=dim){shiftMonth(1);selDay=0;render();return}render()}
+function goToday(){const t=new Date();selDay=t.getDate()-1;render()}
+
+function renderPerson(cw){
+  const dim=daysInMonth(year,month);if(selPerson>=staff.length)selPerson=0;
+  let h="<div class='pchips'>";
+  staff.forEach((s,i)=>{h+="<div class='pchip"+(i===selPerson?" on":"")+"' onclick='selectPerson("+i+")'>"+esc(s.name)+"</div>"});
+  h+="</div>";
+  const s=staff[selPerson];const p=personStats(s);const off=dim-p.tot;
+  h+="<div class='psum'><div class='pstat'><b>"+p.net+"s</b><span>net saat</span></div><div class='pstat'><b>"+p.tot+"</b><span>vardiya</span></div>"+
+     "<div class='pstat'><b>"+p.sh.S+"/"+p.sh.O+"/"+p.sh.G+"</b><span>sabah/öğlen/gece</span></div><div class='pstat'><b>"+off+"</b><span>izin günü</span></div>"+
+     (p.cost&&(+cfg.rate>0||s.rate)?"<div class='pstat'><b>"+p.cost.toLocaleString('tr')+" €</b><span>ücret</span></div>":"")+"</div>";
+  h+="<div class='daylist'>";
+  for(let d=0;d<dim;d++){const dow=new Date(year,month-1,d+1).getDay();const wk=(dow===0||dow===6)?" wknd":"";const v=s._days[d];const sh=shiftByVal(v);
+    const key=sh?sh.key:"F";const badge=sh?(sh.start.slice(0,5)+"-"+sh.end.slice(0,5)):(v==="İZİN"?"İZİN":"—");const w=cw[selPerson+"_"+d]?"<span class='wtag'>&#9650;</span>":"";
+    h+="<div class='dayrow"+wk+"' onclick='openEd("+selPerson+","+d+")'><div class='dd'>"+(d+1)+"</div><div class='dw'>"+TRDAY[dow]+"</div>"+w+"<div class='sb "+key+"'>"+badge+"</div></div>"}
+  h+="</div>";
+  document.getElementById("personView").innerHTML=h;
+}
+function selectPerson(i){selPerson=i;render()}
+function ini(n){return (n||"").trim().charAt(0)}
+
+function syncCfgInputs(){const g=id=>document.getElementById(id);g("cfgNS").value=cfg.ns;g("cfgNO").value=cfg.no;g("cfgNG").value=cfg.ng;g("cfgBreak").value=cfg.breakMin;g("cfgRest").value=cfg.rest;g("cfgStreak").value=cfg.streak;g("cfgWeekly").value=cfg.weekly;g("cfgRate").value=cfg.rate}
+function saveCfg(){const g=id=>+document.getElementById(id).value;cfg.ns=g("cfgNS");cfg.no=g("cfgNO");cfg.ng=g("cfgNG");cfg.breakMin=g("cfgBreak");cfg.rest=g("cfgRest");cfg.streak=g("cfgStreak");cfg.weekly=g("cfgWeekly");cfg.rate=g("cfgRate");persist();render()}
+function renderStaffTbl(){let h="<tr><th>Personel</th><th>Gece?</th><th>Saat ücreti €</th><th></th></tr>";staff.forEach((s,i)=>{h+="<tr><td><input type='text' value='"+esc(s.name)+"' onchange='setName("+i+",this.value)'></td><td><input type='checkbox' "+(!s.noNight?"checked":"")+" onchange='setNight("+i+",this.checked)'></td><td><input type='number' step='0.5' value='"+(s.rate??"")+"' placeholder='genel' onchange='setRate("+i+",this.value)'></td><td><button onclick='delStaff("+i+")'>sil</button></td></tr>"});document.getElementById("staffTbl").innerHTML=h}
 function setName(i,v){staff[i].name=v.trim().toUpperCase();store.staff=staff.map(({_days,...r})=>r);persist();render()}
 function setNight(i,ch){staff[i].noNight=!ch;store.staff=staff.map(({_days,...r})=>r);persist()}
 function setRate(i,v){staff[i].rate=v===""?null:+v;store.staff=staff.map(({_days,...r})=>r);persist();render()}
@@ -399,7 +495,7 @@ function delStaff(i){if(!confirm(staff[i].name+" silinsin mi?"))return;staff.spl
 
 let curSi,curDi;
 function openEd(si,di){curSi=si;curDi=di;const s=staff[si];const dow=new Date(year,month-1,di+1).getDay();
-  let h="<h4>"+esc(s.name)+"</h4><div class='who'>"+(di+1)+" "+MONTHS[month-1]+" · "+TRDAY[dow]+" · şu an: <b>"+(s._days[di]||"boş")+"</b></div><div class='chips'>";
+  let h="<h4>"+esc(s.name)+"</h4><div class='who'>"+(di+1)+" "+MONTHS[month-1]+" · "+TRDAYL[dow]+" · şu an: <b>"+(s._days[di]||"boş")+"</b></div><div class='chips'>";
   cfg.shifts.forEach(sh=>{h+="<div class='chip "+sh.key+"' onclick='setVal(\""+sh.start+"-"+sh.end+"\")'>"+sh.label+"<br>"+sh.start+"-"+sh.end+"</div>"});
   h+="</div><div class='chips' style='margin-top:8px'><div class='chip off' onclick='setVal(\"İZİN\")'>İZİN</div><div class='chip' onclick='setVal(\"\")'>Temizle</div></div>";
   h+="<div class='ed-actions'><button onclick='closeEd()'>Kapat</button></div>";
