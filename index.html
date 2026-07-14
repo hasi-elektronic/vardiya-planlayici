@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vardiya Planlayıcı</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -642,13 +642,38 @@ function closeEd(){document.getElementById("overlay").classList.remove("on")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeEd()});
 let _rz;window.addEventListener("resize",()=>{clearTimeout(_rz);_rz=setTimeout(()=>{if(view==="week")render()},200)});
 
-function exportXlsx(){const dim=daysInMonth(year,month);
-  const head=["Personel"];for(let d=1;d<=dim;d++)head.push(d+" "+TRDAY[new Date(year,month-1,d).getDay()]);head.push("Vardiya","Net Saat","€");
-  const rows=[head];
-  staff.forEach(s=>{const p=personStats(s);const line=[s.name];for(let d=0;d<dim;d++){const sh=shiftByVal(s._days[d]);line.push(sh?sh.start+"-"+sh.end:(s._days[d]==="İZİN"?"İZİN":""))}line.push(p.tot,p.net,p.cost);rows.push(line)});
-  rows.push([]);
+function exportXlsx(){const dim=daysInMonth(year,month);const NC=1+dim+3;
+  const smap={};cfg.shifts.forEach(sh=>smap[sh.start+"-"+sh.end]=sh.key);
+  const header=["Personel"];for(let d=1;d<=dim;d++)header.push(d+"\n"+TRDAY[new Date(year,month-1,d).getDay()]);header.push("Vardiya","Net","€");
+  const rows=[[MONTHT[month-1]+" "+year+" — Vardiya Programı"],header];
+  const bStart=rows.length;
+  staff.forEach(s=>{const p=personStats(s);const line=[s.name];for(let d=0;d<dim;d++){const v=s._days[d];const sh=shiftByVal(v);line.push(sh?sh.start+"-"+sh.end:(v==="YOK"?"Müsait değil":(v==="İZİN"?"İZİN":"")))}line.push(p.tot,p.net,p.cost);rows.push(line)});
+  const cStart=rows.length;
   [["Sabah","S",cfg.ns],["Öğlen","O",cfg.no],["Gece","G",cfg.ng]].forEach(([lbl,k,t])=>{const line=[lbl+" ("+t+")"];for(let d=0;d<dim;d++){let c=0;staff.forEach(s=>{const sh=shiftByVal(s._days[d]);if(sh&&sh.key===k)c++});line.push(c)}line.push("","","");rows.push(line)});
-  const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MONTHS[month-1]+" "+year);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const cols=[{wch:16}];for(let d=0;d<dim;d++)cols.push({wch:6.5});cols.push({wch:7},{wch:7},{wch:7});ws["!cols"]=cols;
+  const rh=[{hpt:26},{hpt:30}];for(let i=bStart;i<rows.length;i++)rh.push({hpt:17});ws["!rows"]=rh;
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:NC-1}}];
+  ws["!freeze"]={xSplit:1,ySplit:2,topLeft:"B3"};ws["!views"]=[{state:"frozen",xSplit:1,ySplit:2}];
+  const C={navy:"FF2F4B7C",wh:"FFFFFFFF",ln:"FFE1E4EA",sbb:"FFEAF0F7",sbt:"FF2D5580",ogb:"FFF7EDEE",ogt:"FF914249",geb:"FFECECF4",get:"FF3C4270",offb:"FFF3F4F7",offt:"FF9AA1AE",sum:"FFF3F5F8",ink:"FF1E2530",wknd:"FFF4F2ED",warn:"FFA8434C",wnb:"FFF7EDEC"};
+  const B={style:"thin",color:{rgb:C.ln}},bd={top:B,bottom:B,left:B,right:B};
+  const set=(r,c,s)=>{const ref=XLSX.utils.encode_cell({r,c});if(!ws[ref])ws[ref]={t:"s",v:""};ws[ref].s=s};
+  set(0,0,{fill:{patternType:"solid",fgColor:{rgb:C.navy}},font:{bold:true,sz:14,color:{rgb:C.wh},name:"Calibri"},alignment:{horizontal:"left",vertical:"center",indent:1}});
+  for(let c=0;c<NC;c++){const isDay=c>=1&&c<=dim;set(1,c,{fill:{patternType:"solid",fgColor:{rgb:C.navy}},font:{bold:true,sz:isDay?9:10,color:{rgb:C.wh},name:"Calibri"},alignment:{horizontal:c===0?"left":"center",vertical:"center",wrapText:true,indent:c===0?1:0},border:bd})}
+  staff.forEach((s,i)=>{const r=bStart+i;
+    set(r,0,{fill:{patternType:"solid",fgColor:{rgb:C.wh}},font:{bold:true,sz:10,color:{rgb:C.ink},name:"Calibri"},alignment:{horizontal:"left",vertical:"center",indent:1},border:bd});
+    for(let d=0;d<dim;d++){const c=1+d;const v=s._days[d];const key=smap[v];const dow=new Date(year,month-1,d+1).getDay();const wknd=(dow===0||dow===6);
+      let bg=wknd?C.wknd:C.wh,tx=C.ink,bold=false;
+      if(key==="S"){bg=C.sbb;tx=C.sbt;bold=true}else if(key==="O"){bg=C.ogb;tx=C.ogt;bold=true}else if(key==="G"){bg=C.geb;tx=C.get;bold=true}else if(v==="İZİN"||v==="YOK"){bg=C.offb;tx=C.offt}
+      set(r,c,{fill:{patternType:"solid",fgColor:{rgb:bg}},font:{bold:bold,sz:8.5,color:{rgb:tx},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})}
+    for(let c=1+dim;c<NC;c++)set(r,c,{fill:{patternType:"solid",fgColor:{rgb:C.sum}},font:{bold:true,sz:10,color:{rgb:C.ink},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})});
+  const cK=["S","O","G"],cT=[cfg.ns,cfg.no,cfg.ng];
+  for(let ci=0;ci<3;ci++){const r=cStart+ci,key=cK[ci],target=cT[ci];
+    set(r,0,{fill:{patternType:"solid",fgColor:{rgb:C.sum}},font:{bold:true,sz:9,color:{rgb:C.ink},name:"Calibri"},alignment:{horizontal:"left",vertical:"center",indent:1},border:bd});
+    for(let d=0;d<dim;d++){const c=1+d;const ref=XLSX.utils.encode_cell({r,c});const cv=ws[ref]?ws[ref].v:0;const under=cv!=target;const bg=key==="S"?C.sbb:key==="O"?C.ogb:C.geb;const tx=key==="S"?C.sbt:key==="O"?C.ogt:C.get;
+      set(r,c,{fill:{patternType:"solid",fgColor:{rgb:under?C.wnb:bg}},font:{bold:true,sz:9,color:{rgb:under?C.warn:tx},name:"Calibri"},alignment:{horizontal:"center",vertical:"center"},border:bd})}
+    for(let c=1+dim;c<NC;c++)set(r,c,{border:bd})}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MONTHT[month-1]+" "+year);
   XLSX.writeFile(wb,"vardiya_"+year+"-"+String(month).padStart(2,"0")+".xlsx")}
 
 const ROLECOLORS=["#4a6d82","#93555b","#5a7ba0","#7d5a72","#3f5c86","#8a5f66","#5e7590","#7a6b8a"];
