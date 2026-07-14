@@ -10,22 +10,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f6f8fb;--panel:#ffffff;--panel2:#f9fafc;--ink:#1a1f2e;--ink2:#616b7a;--ink3:#9aa3b2;--line:#e9edf3;--line2:#f1f4f8;
-  --accent:#4f46e5;--accent2:#33afe2;--accent-soft:#eef0fd;--warn:#e05656;--warn-soft:#fdf0f0;--wknd:#faf8f3;--ok:#10b981;
-  --sab-bg:#e7f7ef;--sab-tx:#067a52;--sab-ac:#10b981;
-  --ogl-bg:#fdf1dd;--ogl-tx:#b0700c;--ogl-ac:#f59e0b;
-  --gec-bg:#eae9fd;--gec-tx:#4f46b8;--gec-ac:#6366f1;
-  --off-bg:#f2f4f8;--off-tx:#8a94a4;--off-ac:#cbd3de;
-  --shadow:0 1px 2px rgba(20,26,36,.04),0 4px 16px rgba(20,26,36,.05);
-  --shadow-lg:0 24px 60px rgba(20,26,36,.24);
+  --bg:#f4f5f7;--panel:#ffffff;--panel2:#f8f9fb;--ink:#212936;--ink2:#5c6674;--ink3:#98a1af;--line:#e6e8ec;--line2:#f0f1f4;
+  --accent:#3f4d63;--accent2:#5a7a99;--accent-soft:#eceff3;--warn:#a9564f;--warn-soft:#f6efed;--wknd:#f7f7f5;--ok:#527e63;
+  --sab-bg:#eef2ef;--sab-tx:#4c6b58;--sab-ac:#8aa894;
+  --ogl-bg:#f4efe6;--ogl-tx:#836f4c;--ogl-ac:#c1ab84;
+  --gec-bg:#eceff4;--gec-tx:#4f5d73;--gec-ac:#8695ac;
+  --off-bg:#f1f2f5;--off-tx:#8b93a1;--off-ac:#ccd1d9;
+  --shadow:0 1px 2px rgba(30,37,48,.04),0 3px 12px rgba(30,37,48,.045);
+  --shadow-lg:0 20px 50px rgba(30,37,48,.2);
 }
 [data-theme="dark"]{
-  --bg:#0e1219;--panel:#151b24;--panel2:#1a212c;--ink:#e9edf4;--ink2:#9aa5b5;--ink3:#68727f;--line:#252d38;--line2:#1f2731;
-  --accent:#7c74f0;--accent2:#4fbef0;--accent-soft:#232a4a;--warn:#f0736f;--warn-soft:#2a1a1c;--wknd:#171b20;--ok:#34d399;
-  --sab-bg:#0f3226;--sab-tx:#4ade9e;--sab-ac:#10b981;
-  --ogl-bg:#33260f;--ogl-tx:#f0b45e;--ogl-ac:#f59e0b;
-  --gec-bg:#211f45;--gec-tx:#a5a0f5;--gec-ac:#6366f1;
-  --off-bg:#1d242e;--off-tx:#7e8896;--off-ac:#39434f;
+  --bg:#12151b;--panel:#191d24;--panel2:#1e232b;--ink:#e4e7ec;--ink2:#98a1af;--ink3:#69727e;--line:#2a2f38;--line2:#22272f;
+  --accent:#8592a8;--accent2:#7d97b0;--accent-soft:#252b36;--warn:#c17b76;--warn-soft:#2a1f1e;--wknd:#171a1f;--ok:#7fa88b;
+  --sab-bg:#1c2620;--sab-tx:#8fb39c;--sab-ac:#5f7d69;
+  --ogl-bg:#2a251c;--ogl-tx:#c2a878;--ogl-ac:#8a7a54;
+  --gec-bg:#1e242e;--gec-tx:#93a2ba;--gec-ac:#5d6b82;
+  --off-bg:#20252d;--off-tx:#7e8896;--off-ac:#39424e;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.4);
   --shadow-lg:0 24px 60px rgba(0,0,0,.65);
 }
@@ -34,7 +34,7 @@ body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
 header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:11px}
-.logomark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#6d63f0);display:grid;place-items:center;flex:none;box-shadow:0 3px 10px rgba(79,70,229,.35)}
+.logomark{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;flex:none}
 .logomark::before{content:"";width:13px;height:13px;border-radius:4px;border:2.5px solid #fff}
 .brand{display:flex;flex-direction:column;line-height:1.15}
 .brand b{font-size:15.5px;letter-spacing:-.02em;font-weight:800}
@@ -49,8 +49,8 @@ header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 
 button{font-family:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:10px;cursor:pointer;font-weight:600;transition:.14s;display:inline-flex;align-items:center;gap:6px}
 button:hover{border-color:var(--ink3);background:var(--panel2);transform:translateY(-1px)}
 button:active{transform:translateY(0)}
-button.primary{background:linear-gradient(135deg,var(--accent),#6d63f0);border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(79,70,229,.32)}
-button.primary:hover{filter:brightness(1.08);box-shadow:0 5px 16px rgba(79,70,229,.42)}
+button.primary{background:var(--accent);border-color:transparent;color:#fff}
+button.primary:hover{filter:brightness(1.1)}
 button.icon{padding:8px 10px}
 .month-nav button{border:none;background:transparent;padding:5px 9px}
 .month-nav button:hover{background:var(--line2);transform:none}
@@ -325,7 +325,7 @@ const TRDAYL=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumar
 const MONTHS=["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
 const MONTHT=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const SEED_NAMES=["ESENGÜL","ALİ","HÜSEYİN","SEVHAN","OĞUZHAN","TESLİME","MERVE","ŞERİFE","DİLEK","ALİ KEMAL","MEHMET","MUSTAFA","TUĞBA","ÖZGE","NİSA","ESMA","ESRA","HATİCE","GÜLSÜM","RECEP AVCI"];
-const AVCOLORS=["#6366f1","#10b981","#f59e0b","#ef4444","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#f97316","#0ea5e9","#84cc16","#a855f7"];
+const AVCOLORS=["#6b7a99","#7a9483","#a08a6b","#94788a","#6f8a99","#8a7d99","#99806b","#7f9199","#8892a5","#79918a","#9a8f7d","#748a94"];
 const DEFAULT_CFG={ns:6,no:6,ng:3,breakMin:30,rest:11,streak:6,weekly:48,rate:0,
   shifts:[{key:"S",label:"Sabah",start:"07:00",end:"15:00"},{key:"O",label:"Öğlen",start:"15:00",end:"23:00"},{key:"G",label:"Gece",start:"23:00",end:"07:00"}]};
 
